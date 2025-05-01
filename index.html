@@ -5,56 +5,217 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
       body {
+        margin: 0;
         font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 20px;
+        background-color: #1c2526;
+        color: #ffffff;
       }
-      .product {
-        border: 1px solid #ccc;
+      .container {
         padding: 10px;
-        margin: 10px auto;
-        max-width: 300px;
+        padding-bottom: 60px; /* Отступ для нижней панели */
       }
-      img {
-        max-width: 100%;
-        height: auto;
+      .search-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
       }
-      button {
-        background-color: #0088cc;
-        color: white;
-        padding: 10px;
+      .search-bar input {
+        flex: 1;
+        padding: 8px;
         border: none;
+        border-radius: 5px 0 0 5px;
+        background-color: #333;
+        color: #fff;
+      }
+      .search-bar .search-icon {
+        padding: 8px;
+        background-color: #333;
+        border-radius: 0 5px 5px 0;
+      }
+      .search-bar .filter-btn {
+        margin-left: 10px;
+        padding: 8px;
+        background-color: #333;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
         cursor: pointer;
       }
-      button:hover {
-        background-color: #005f87;
+      .catalog {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .product {
+        background-color: #333;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .product img {
+        width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+      .product h3 {
+        font-size: 14px;
+        margin: 5px 0;
+      }
+      .product p {
+        font-size: 12px;
+        margin: 2px 0;
+      }
+      .stars {
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+      }
+      .stars .star {
+        color: #ff0000;
+        font-size: 12px;
+      }
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #333;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+      }
+      .bottom-nav button {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
-    <h1>Мой магазин</h1>
-    <div class="product">
-      <h3>Футболка "Котик"</h3>
-      <img src="https://via.placeholder.com/150" alt="Футболка" />
-      <p>Цена: 1000 руб.</p>
-      <button onclick="addToCart()">Добавить в корзину</button>
+    <div class="container">
+      <div class="search-bar">
+        <input type="text" placeholder="Поиск..." id="searchInput" />
+        <span class="search-icon">🔍</span>
+        <button class="filter-btn" onclick="showFilters()">Фильтры ⚙️</button>
+      </div>
+      <div class="catalog" id="catalog"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <button onclick="showCatalog()">📋</button>
+      <button onclick="showCart()">🛒</button>
+      <button onclick="showReviews()">💬</button>
     </div>
 
     <script>
+      // Список товаров
+      const products = [
+        {
+          id: 1,
+          name: "Bal Sagoth",
+          year: 1999,
+          size: "XL",
+          price: 6000,
+          image: "https://via.placeholder.com/150",
+          condition: 5,
+        },
+        {
+          id: 2,
+          name: "Incarnated",
+          year: 1999,
+          size: "L",
+          price: 8000,
+          image: "https://via.placeholder.com/150/0000FF/808080",
+          condition: 5,
+        },
+        {
+          id: 3,
+          name: "Opeth",
+          year: 2002,
+          size: "L",
+          price: 4500,
+          image: "https://via.placeholder.com/150/FF0000/FFFFFF",
+          condition: 5,
+        },
+        {
+          id: 4,
+          name: "SOAD",
+          year: 2001,
+          size: "M/L",
+          price: 7500,
+          image: "https://via.placeholder.com/150/00FF00/000000",
+          condition: 5,
+        },
+      ];
+
       // Инициализация Telegram Web Apps
       const tg = window.Telegram.WebApp;
       tg.ready();
 
-      function addToCart() {
-        alert("Футболка добавлена в корзину!");
-        tg.MainButton.setText("Перейти в корзину");
-        tg.MainButton.show();
+      // Функция для отображения каталога
+      function renderCatalog(filteredProducts = products) {
+        const catalogDiv = document.getElementById("catalog");
+        catalogDiv.innerHTML = ""; // Очищаем каталог
+
+        filteredProducts.forEach((product) => {
+          const productDiv = document.createElement("div");
+          productDiv.className = "product";
+          productDiv.innerHTML = `
+          <img src="${product.image}" alt="${product.name}">
+          <h3>${product.name}</h3>
+          <p>${product.year} ${product.size}</p>
+          <p>${product.price}₽</p>
+          <div class="stars">${renderStars(product.condition)}</div>
+        `;
+          productDiv.onclick = () => showProductPage(product.id);
+          catalogDiv.appendChild(productDiv);
+        });
       }
 
-      // Обработчик кнопки Telegram
-      tg.MainButton.onClick(() => {
-        alert("Переходим в корзину!");
+      // Функция для отображения звезд
+      function renderStars(count) {
+        let stars = "";
+        for (let i = 0; i < 5; i++) {
+          stars += `<span class="star">${i < count ? "★" : "☆"}</span>`;
+        }
+        return stars;
+      }
+
+      // Функция для поиска
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredProducts = products.filter((product) =>
+          product.name.toLowerCase().includes(searchTerm)
+        );
+        renderCatalog(filteredProducts);
       });
+
+      // Функции навигации (заглушки)
+      function showCatalog() {
+        renderCatalog();
+      }
+
+      function showCart() {
+        alert("Открываем корзину!");
+      }
+
+      function showReviews() {
+        alert("Открываем отзывы!");
+      }
+
+      function showFilters() {
+        alert("Открываем фильтры!");
+      }
+
+      function showProductPage(productId) {
+        alert(`Открываем страницу товара: ${productId}`);
+        // Позже добавим переход на страницу товара
+      }
+
+      // Отображаем каталог при загрузке
+      renderCatalog();
     </script>
   </body>
 </html>
