@@ -124,18 +124,25 @@ function filterProducts() {
 
   // Фильтр по категориям
   if (currentFilters.categories.length > 0) {
+    const mainCategories = ["Футболка", "Лонгслив", "Худи"];
+    const selectedMainCategories = currentFilters.categories.filter((cat) =>
+      mainCategories.includes(cat)
+    );
+    const includeOther = currentFilters.categories.includes("Другое");
+
     filteredProducts = filteredProducts.filter((product) => {
-      if (currentFilters.categories.includes("Другое")) {
-        const otherCategories = ["Футболка", "Лонгслив", "Худи"];
-        return (
-          currentFilters.categories.includes(product.category) ||
-          (!otherCategories.includes(product.category) &&
-            !currentFilters.categories.some((cat) =>
-              otherCategories.includes(cat)
-            ))
-        );
+      // Если выбраны основные категории (Футболка, Лонгслив, Худи), проверяем их
+      if (
+        selectedMainCategories.length > 0 &&
+        selectedMainCategories.includes(product.category)
+      ) {
+        return true;
       }
-      return currentFilters.categories.includes(product.category);
+      // Если выбрано "Другое", включаем товары, которые не входят в основные категории
+      if (includeOther && !mainCategories.includes(product.category)) {
+        return true;
+      }
+      return false;
     });
   }
 
