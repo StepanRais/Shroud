@@ -144,6 +144,16 @@ body {
   font-size: 14px;
   margin: 2px 0;
 }
+.product-details select {
+  padding: 8px;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  margin-top: 5px;
+  width: 100%;
+  max-width: 200px;
+}
 .add-to-cart-btn {
   background-color: #333;
   color: #fff;
@@ -154,6 +164,145 @@ body {
   margin-top: 10px;
   width: 100%;
   max-width: 300px;
+}
+
+/* Стили для корзины */
+.cart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cart-item {
+  display: flex;
+  align-items: center;
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+}
+.cart-item img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+.cart-item-details {
+  flex: 1;
+}
+.cart-item-details h3 {
+  font-size: 14px;
+  margin: 0;
+}
+.cart-item-details p {
+  font-size: 12px;
+  margin: 2px 0;
+}
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.remove-btn {
+  background: none;
+  border: none;
+  color: #ff0000;
+  font-size: 20px;
+  cursor: pointer;
+}
+.buy-btn {
+  background-color: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.buy-all-btn {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 300px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Стили для отзывов */
+.reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.review {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 5px;
+}
+.review h3 {
+  font-size: 14px;
+  margin: 0;
+  margin-bottom: 5px;
+}
+.review p {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Стили для фильтров */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.filter-group h3 {
+  font-size: 16px;
+  margin: 0;
+  margin-bottom: 5px;
+}
+.filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+.filter-group input[type="checkbox"] {
+  accent-color: #ff0000; /* Красный цвет для чекбоксов */
+}
+.filter-group input[type="number"] {
+  padding: 8px;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  width: 100%;
+  max-width: 200px;
+}
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+.apply-btn,
+.reset-btn {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  flex: 1;
+}
+.reset-btn {
+  background-color: #ff0000;
 }
 
 /* Нижняя панель */

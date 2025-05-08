@@ -12,7 +12,9 @@
         <div class="search-bar">
           <input type="text" placeholder="Поиск..." id="searchInput" />
           <span class="search-icon">🔍</span>
-          <button class="filter-btn" onclick="showFilters()">Фильтры ⚙️</button>
+          <button class="filter-btn" onclick="showScreen('filtersScreen')">
+            Фильтры ⚙️
+          </button>
         </div>
         <div class="catalog" id="catalog"></div>
       </div>
@@ -24,12 +26,85 @@
         </button>
         <div class="product-page" id="productPage"></div>
       </div>
+
+      <!-- Экран корзины -->
+      <div class="screen" id="cartScreen">
+        <h2>Корзина</h2>
+        <div class="cart" id="cart"></div>
+        <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
+      </div>
+
+      <!-- Экран отзывов -->
+      <div class="screen" id="reviewsScreen">
+        <h2>Отзывы</h2>
+        <div class="reviews" id="reviews"></div>
+      </div>
+
+      <!-- Экран фильтров -->
+      <div class="screen" id="filtersScreen">
+        <h2>Фильтры</h2>
+        <div class="filters">
+          <div class="filter-group">
+            <h3>Категория</h3>
+            <label
+              ><input type="checkbox" name="category" value="Футболка" />
+              Футболка</label
+            >
+            <label
+              ><input type="checkbox" name="category" value="Лонгслив" />
+              Лонгслив</label
+            >
+            <label
+              ><input type="checkbox" name="category" value="Худи" />
+              Худи</label
+            >
+            <label
+              ><input type="checkbox" name="category" value="Другое" />
+              Другое</label
+            >
+          </div>
+          <div class="filter-group">
+            <h3>Размер</h3>
+            <label><input type="checkbox" name="size" value="S" /> S</label>
+            <label><input type="checkbox" name="size" value="M" /> M</label>
+            <label><input type="checkbox" name="size" value="L" /> L</label>
+            <label><input type="checkbox" name="size" value="XL" /> XL</label>
+            <label><input type="checkbox" name="size" value="XXL" /> XXL</label>
+          </div>
+          <div class="filter-group">
+            <h3>Цена</h3>
+            <input type="number" id="minPrice" placeholder="Мин. цена" />
+            <input type="number" id="maxPrice" placeholder="Макс. цена" />
+          </div>
+          <div class="filter-group">
+            <h3>Состояние</h3>
+            <label
+              ><input type="checkbox" name="condition" value="5" /> 5
+              звезд</label
+            >
+            <label
+              ><input type="checkbox" name="condition" value="4" /> 4
+              звезды</label
+            >
+            <label
+              ><input type="checkbox" name="condition" value="3" /> 3
+              звезды</label
+            >
+          </div>
+          <div class="filter-actions">
+            <button class="apply-btn" onclick="applyFilters()">
+              Применить
+            </button>
+            <button class="reset-btn" onclick="resetFilters()">Сбросить</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="bottom-nav">
       <button onclick="showScreen('catalogScreen')">📋</button>
-      <button onclick="showCart()">🛒</button>
-      <button onclick="showReviews()">💬</button>
+      <button onclick="showScreen('cartScreen')">🛒</button>
+      <button onclick="showScreen('reviewsScreen')">💬</button>
     </div>
 
     <script src="scripts.js"></script>
