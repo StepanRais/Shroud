@@ -111,7 +111,7 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 
 // Список ID администраторов (замени на реальные ID)
-const adminUserIds = [123456789, 987654321]; // Пример ID, нужно заменить на твои
+const adminUserIds = [570191364]; // Пример ID, нужно заменить на твои
 
 // Проверка, является ли пользователь администратором
 function checkIfAdminUser() {
