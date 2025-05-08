@@ -1,5 +1,19 @@
+// Загрузка данных из localStorage при старте
+const loadData = () => {
+  const savedProducts = localStorage.getItem("products");
+  const savedReviews = localStorage.getItem("reviews");
+  if (savedProducts) products = JSON.parse(savedProducts);
+  if (savedReviews) reviews = JSON.parse(savedReviews);
+};
+
+// Сохранение данных в localStorage
+const saveData = () => {
+  localStorage.setItem("products", JSON.stringify(products));
+  localStorage.setItem("reviews", JSON.stringify(reviews));
+};
+
 // Список товаров
-const products = [
+let products = [
   {
     id: 1,
     name: "Bal Sagoth",
@@ -54,7 +68,7 @@ const products = [
     id: 6,
     name: "Metallica",
     year: 2005,
-    size: [], // Для "Пряжки" размер не указываем
+    size: [],
     price: 3000,
     images: ["./images/metallica.jpg", "./images/metallica2.jpg"],
     category: "Пряжка",
@@ -62,8 +76,8 @@ const products = [
   },
 ];
 
-// Список отзывов (пока статический)
-const reviews = [
+// Список отзывов
+let reviews = [
   {
     username: "Алексей",
     text: "Отличный магазин! Футболки в идеальном состоянии, доставка быстрая.",
@@ -78,8 +92,10 @@ const reviews = [
   },
 ];
 
-// Корзина (глобальный массив)
+// Корзина
 let cart = [];
+let isAdminAuthenticated = false;
+let isAdminUser = false;
 
 // Переменные для хранения текущих фильтров
 let currentFilters = {
@@ -94,10 +110,70 @@ let currentFilters = {
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Список ID администраторов (замени на реальные ID)
+const adminUserIds = [123456789, 987654321]; // Пример ID, нужно заменить на твои
+
+// Проверка, является ли пользователь администратором
+function checkIfAdminUser() {
+  const user = tg.initDataUnsafe.user;
+  if (user && adminUserIds.includes(user.id)) {
+    isAdminUser = true;
+  }
+}
+
+// Динамическое добавление кнопки администратора
+function renderBottomNav() {
+  const bottomNav = document.getElementById("bottomNav");
+  if (isAdminUser) {
+    const adminButton = document.createElement("button");
+    adminButton.innerHTML = "🛠️";
+    adminButton.onclick = () => showScreen("adminScreen");
+    bottomNav.appendChild(adminButton);
+  }
+}
+
+// Загружаем данные при старте
+loadData();
+
+// Проверяем пользователя и отображаем навигацию
+checkIfAdminUser();
+renderBottomNav();
+
+// Функция проверки пароля администратора
+function checkAdminPassword() {
+  const password = document.getElementById("adminPassword").value;
+  const correctPassword = "admin123";
+
+  if (password === correctPassword) {
+    isAdminAuthenticated = true;
+    document.getElementById("adminPassword").style.display = "none";
+    document
+      .querySelectorAll(".admin-section button")
+      .forEach((btn) => (btn.style.display = "none"));
+    document.getElementById("adminContent").style.display = "block";
+    document.getElementById("adminContent2").style.display = "block";
+    document.getElementById("adminContent3").style.display = "block";
+    document.getElementById("adminContent4").style.display = "block";
+    renderAdmin();
+    alert("Доступ открыт!");
+  } else {
+    alert("Неверный пароль!");
+  }
+}
+
+// Функция для преобразования изображения в base64
+function getBase64Image(file, callback) {
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    callback(event.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
 // Функция для отображения каталога
 function renderCatalog(filteredProducts = products) {
   const catalogDiv = document.getElementById("catalog");
-  catalogDiv.innerHTML = ""; // Очищаем каталог
+  catalogDiv.innerHTML = "";
 
   filteredProducts.forEach((product) => {
     const productDiv = document.createElement("div");
@@ -122,7 +198,6 @@ function renderCatalog(filteredProducts = products) {
 function filterProducts() {
   let filteredProducts = products;
 
-  // Фильтр по категориям
   if (currentFilters.categories.length > 0) {
     const mainCategories = ["Футболка", "Лонгслив", "Худи"];
     const selectedMainCategories = currentFilters.categories.filter((cat) =>
@@ -131,14 +206,12 @@ function filterProducts() {
     const includeOther = currentFilters.categories.includes("Другое");
 
     filteredProducts = filteredProducts.filter((product) => {
-      // Если выбраны основные категории (Футболка, Лонгслив, Худи), проверяем их
       if (
         selectedMainCategories.length > 0 &&
         selectedMainCategories.includes(product.category)
       ) {
         return true;
       }
-      // Если выбрано "Другое", включаем товары, которые не входят в основные категории
       if (includeOther && !mainCategories.includes(product.category)) {
         return true;
       }
@@ -146,15 +219,13 @@ function filterProducts() {
     });
   }
 
-  // Фильтр по размерам
   if (currentFilters.sizes.length > 0) {
     filteredProducts = filteredProducts.filter((product) => {
-      if (product.size.length === 0) return false; // Пропускаем товары без размера
+      if (product.size.length === 0) return false;
       return product.size.some((size) => currentFilters.sizes.includes(size));
     });
   }
 
-  // Фильтр по цене
   if (currentFilters.minPrice !== null) {
     filteredProducts = filteredProducts.filter(
       (product) => product.price >= currentFilters.minPrice
@@ -166,14 +237,12 @@ function filterProducts() {
     );
   }
 
-  // Фильтр по состоянию
   if (currentFilters.conditions.length > 0) {
     filteredProducts = filteredProducts.filter((product) =>
       currentFilters.conditions.includes(String(product.condition))
     );
   }
 
-  // Фильтр по поиску
   const searchTerm = document.getElementById("searchInput").value.toLowerCase();
   if (searchTerm) {
     filteredProducts = filteredProducts.filter((product) =>
@@ -186,7 +255,6 @@ function filterProducts() {
 
 // Функция для применения фильтров
 function applyFilters() {
-  // Собираем выбранные категории
   const categoryCheckboxes = document.querySelectorAll(
     'input[name="category"]:checked'
   );
@@ -194,7 +262,6 @@ function applyFilters() {
     (checkbox) => checkbox.value
   );
 
-  // Собираем выбранные размеры
   const sizeCheckboxes = document.querySelectorAll(
     'input[name="size"]:checked'
   );
@@ -202,13 +269,11 @@ function applyFilters() {
     (checkbox) => checkbox.value
   );
 
-  // Собираем диапазон цен
   const minPrice = document.getElementById("minPrice").value;
   const maxPrice = document.getElementById("maxPrice").value;
   currentFilters.minPrice = minPrice ? Number(minPrice) : null;
   currentFilters.maxPrice = maxPrice ? Number(maxPrice) : null;
 
-  // Собираем выбранное состояние
   const conditionCheckboxes = document.querySelectorAll(
     'input[name="condition"]:checked'
   );
@@ -216,7 +281,6 @@ function applyFilters() {
     (checkbox) => checkbox.value
   );
 
-  // Применяем фильтры и возвращаемся в каталог
   showScreen("catalogScreen");
 }
 
@@ -230,7 +294,6 @@ function resetFilters() {
     conditions: [],
   };
 
-  // Сбрасываем значения в форме
   document.querySelectorAll('input[name="category"]').forEach((checkbox) => {
     checkbox.checked = false;
   });
@@ -243,7 +306,6 @@ function resetFilters() {
     checkbox.checked = false;
   });
 
-  // Обновляем каталог
   showScreen("catalogScreen");
 }
 
@@ -251,7 +313,7 @@ function resetFilters() {
 let currentImageIndex = 0;
 function showProductPage(productId) {
   const product = products.find((p) => p.id === productId);
-  currentImageIndex = 0; // Сбрасываем индекс изображения
+  currentImageIndex = 0;
 
   const sizeOptions =
     product.size.length > 0
@@ -263,9 +325,7 @@ function showProductPage(productId) {
   const productPageDiv = document.getElementById("productPage");
   productPageDiv.innerHTML = `
     <div class="product-image">
-      <img src="${product.images[currentImageIndex]}" alt="${
-    product.name
-  }" id="productImage">
+      <img src="${product.images[0]}" alt="${product.name}" id="productImage">
       <button class="arrow left" onclick="changeImage(-1)">⬅</button>
       <button class="arrow right" onclick="changeImage(1)">➡</button>
     </div>
@@ -287,7 +347,7 @@ function showProductPage(productId) {
 // Функция для отображения корзины
 function renderCart() {
   const cartDiv = document.getElementById("cart");
-  cartDiv.innerHTML = ""; // Очищаем корзину
+  cartDiv.innerHTML = "";
 
   if (cart.length === 0) {
     cartDiv.innerHTML = "<p>Корзина пуста</p>";
@@ -313,25 +373,155 @@ function renderCart() {
   });
 }
 
+// Функция для отображения и управления товарами и отзывами в админке
+function renderAdmin() {
+  if (!isAdminAuthenticated) return;
+
+  const productListDiv = document.getElementById("productList");
+  const reviewListDiv = document.getElementById("reviewList");
+
+  productListDiv.innerHTML = "";
+  reviewListDiv.innerHTML = "";
+
+  products.forEach((product, index) => {
+    const productItemDiv = document.createElement("div");
+    productItemDiv.className = "product-item";
+    productItemDiv.innerHTML = `
+      <h4>${product.name} (${product.category}) - ${product.price}₽</h4>
+      <p>Размер: ${
+        product.size.length > 0 ? product.size.join("/") : "Без размера"
+      }</p>
+      <button class="delete-btn" onclick="deleteProduct(${index})">✖</button>
+    `;
+    productListDiv.appendChild(productItemDiv);
+  });
+
+  reviews.forEach((review, index) => {
+    const reviewItemDiv = document.createElement("div");
+    reviewItemDiv.className = "review-item";
+    reviewItemDiv.innerHTML = `
+      <h4>${review.username}</h4>
+      <p>${review.text}</p>
+      <button class="delete-btn" onclick="deleteReview(${index})">✖</button>
+    `;
+    reviewListDiv.appendChild(reviewItemDiv);
+  });
+
+  saveData();
+}
+
+// Функция для добавления товара
+function addProduct() {
+  if (!isAdminAuthenticated) return;
+
+  const name = document.getElementById("newProductName").value;
+  const category = document.getElementById("newProductCategory").value;
+  const sizesInput = document
+    .getElementById("newProductSizes")
+    .value.split(",")
+    .map((s) => s.trim())
+    .filter((s) => s);
+  const price = Number(document.getElementById("newProductPrice").value);
+  const condition = Number(
+    document.getElementById("newProductCondition").value
+  );
+  const imageInput = document.getElementById("newProductImage");
+
+  if (
+    name &&
+    category &&
+    !isNaN(price) &&
+    !isNaN(condition) &&
+    condition >= 1 &&
+    condition <= 5
+  ) {
+    getBase64Image(imageInput.files[0], (base64Image) => {
+      const newProduct = {
+        id:
+          products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
+        name,
+        year: new Date().getFullYear(),
+        size: sizesInput.length > 0 ? sizesInput : [],
+        price,
+        images:
+          imageInput.files.length > 0
+            ? [base64Image]
+            : ["https://via.placeholder.com/150"],
+        category,
+        condition,
+      };
+      products.push(newProduct);
+      alert("Товар добавлен!");
+      document.getElementById("newProductName").value = "";
+      document.getElementById("newProductCategory").value = "";
+      document.getElementById("newProductSizes").value = "";
+      document.getElementById("newProductPrice").value = "";
+      document.getElementById("newProductCondition").value = "";
+      imageInput.value = "";
+      renderAdmin();
+    });
+  } else {
+    alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
+  }
+}
+
+// Функция для удаления товара
+function deleteProduct(index) {
+  if (!isAdminAuthenticated) return;
+  products.splice(index, 1);
+  renderAdmin();
+  renderCatalog(filterProducts());
+}
+
+// Функция для добавления отзыва
+function addReview() {
+  if (!isAdminAuthenticated) return;
+
+  const username = document.getElementById("newReviewUsername").value;
+  const text = document.getElementById("newReviewText").value;
+
+  if (username && text) {
+    const newReview = { username, text };
+    reviews.push(newReview);
+    alert("Отзыв добавлен!");
+    document.getElementById("newReviewUsername").value = "";
+    document.getElementById("newReviewText").value = "";
+    renderAdmin();
+  } else {
+    alert("Заполните все поля!");
+  }
+}
+
+// Функция для удаления отзыва
+function deleteReview(index) {
+  if (!isAdminAuthenticated) return;
+  reviews.splice(index, 1);
+  renderAdmin();
+  renderReviews();
+}
+
 // Функция для отображения отзывов
 function renderReviews() {
   const reviewsDiv = document.getElementById("reviews");
-  reviewsDiv.innerHTML = ""; // Очищаем отзывы
+  reviewsDiv.innerHTML = "";
 
   if (reviews.length === 0) {
     reviewsDiv.innerHTML = "<p>Отзывов пока нет</p>";
     return;
   }
 
-  reviews.forEach((review) => {
+  reviews.forEach((review, index) => {
     const reviewDiv = document.createElement("div");
     reviewDiv.className = "review";
     reviewDiv.innerHTML = `
       <h3>${review.username}</h3>
       <p>${review.text}</p>
+      <button class="delete-btn" onclick="deleteReview(${index})">✖</button>
     `;
     reviewsDiv.appendChild(reviewDiv);
   });
+
+  saveData();
 }
 
 // Функция для добавления в корзину
@@ -399,7 +589,7 @@ function changeImage(direction) {
     product.images[currentImageIndex];
 }
 
-// Функция для получения текущего ID товара (временное решение)
+// Функция для получения текущего ID товара
 function getCurrentProductId() {
   const productName = document.querySelector(".product-details h2").textContent;
   return products.find((p) => p.name === productName).id;
@@ -426,6 +616,19 @@ function showScreen(screenId) {
     renderCart();
   } else if (screenId === "reviewsScreen") {
     renderReviews();
+  } else if (screenId === "adminScreen") {
+    if (!isAdminUser) {
+      alert("Доступ запрещён!");
+      showScreen("catalogScreen");
+      return;
+    }
+    if (!isAdminAuthenticated) {
+      document.getElementById("adminPassword").value = "";
+      document.getElementById("adminContent").style.display = "none";
+      document.getElementById("adminContent2").style.display = "none";
+      document.getElementById("adminContent3").style.display = "none";
+      document.getElementById("adminContent4").style.display = "none";
+    }
   }
 }
 
@@ -434,7 +637,6 @@ document.getElementById("searchInput").addEventListener("input", () => {
   renderCatalog(filterProducts());
 });
 
-// Функции навигации
 function showReviews() {
   showScreen("reviewsScreen");
 }
