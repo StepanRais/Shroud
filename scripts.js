@@ -111,7 +111,7 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 
 // Список ID администраторов (замени на реальные ID)
-const adminUserIds = [570191364]; // Пример ID, нужно заменить на твои
+const adminUserIds = [570191364];
 
 // Проверка, является ли пользователь администратором
 function checkIfAdminUser() {
@@ -147,9 +147,8 @@ function checkAdminPassword() {
   if (password === correctPassword) {
     isAdminAuthenticated = true;
     document.getElementById("adminPassword").style.display = "none";
-    document
-      .querySelectorAll(".admin-section button")
-      .forEach((btn) => (btn.style.display = "none"));
+    document.querySelector("#adminScreen .admin-section h3").style.display =
+      "none";
     document.getElementById("adminContent").style.display = "block";
     document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent3").style.display = "block";
@@ -161,13 +160,27 @@ function checkAdminPassword() {
   }
 }
 
-// Функция для преобразования изображения в base64
-function getBase64Image(file, callback) {
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    callback(event.target.result);
-  };
-  reader.readAsDataURL(file);
+// Функция для преобразования файлов в base64
+function getBase64Images(files, callback) {
+  const base64Images = [];
+  let completed = 0;
+
+  if (files.length === 0) {
+    callback([]);
+    return;
+  }
+
+  for (let i = 0; i < files.length; i++) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      base64Images[i] = event.target.result;
+      completed++;
+      if (completed === files.length) {
+        callback(base64Images);
+      }
+    };
+    reader.readAsDataURL(files[i]);
+  }
 }
 
 // Функция для отображения каталога
@@ -325,7 +338,9 @@ function showProductPage(productId) {
   const productPageDiv = document.getElementById("productPage");
   productPageDiv.innerHTML = `
     <div class="product-image">
-      <img src="${product.images[0]}" alt="${product.name}" id="productImage">
+      <img src="${product.images[currentImageIndex]}" alt="${
+    product.name
+  }" id="productImage">
       <button class="arrow left" onclick="changeImage(-1)">⬅</button>
       <button class="arrow right" onclick="changeImage(1)">➡</button>
     </div>
@@ -391,6 +406,7 @@ function renderAdmin() {
       <p>Размер: ${
         product.size.length > 0 ? product.size.join("/") : "Без размера"
       }</p>
+      <button class="edit-btn" onclick="editProduct(${index})">✏️</button>
       <button class="delete-btn" onclick="deleteProduct(${index})">✖</button>
     `;
     productListDiv.appendChild(productItemDiv);
@@ -402,6 +418,7 @@ function renderAdmin() {
     reviewItemDiv.innerHTML = `
       <h4>${review.username}</h4>
       <p>${review.text}</p>
+      <button class="edit-btn" onclick="editReview(${index})">✏️</button>
       <button class="delete-btn" onclick="deleteReview(${index})">✖</button>
     `;
     reviewListDiv.appendChild(reviewItemDiv);
@@ -435,7 +452,7 @@ function addProduct() {
     condition >= 1 &&
     condition <= 5
   ) {
-    getBase64Image(imageInput.files[0], (base64Image) => {
+    getBase64Images(imageInput.files, (base64Images) => {
       const newProduct = {
         id:
           products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
@@ -444,8 +461,8 @@ function addProduct() {
         size: sizesInput.length > 0 ? sizesInput : [],
         price,
         images:
-          imageInput.files.length > 0
-            ? [base64Image]
+          base64Images.length > 0
+            ? base64Images
             : ["https://via.placeholder.com/150"],
         category,
         condition,
@@ -463,6 +480,70 @@ function addProduct() {
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
   }
+}
+
+// Функция для редактирования товара
+function editProduct(index) {
+  const product = products[index];
+  document.getElementById("editProductIndex").value = index;
+  document.getElementById("editProductName").value = product.name;
+  document.getElementById("editProductCategory").value = product.category;
+  document.getElementById("editProductSizes").value = product.size.join(",");
+  document.getElementById("editProductPrice").value = product.price;
+  document.getElementById("editProductCondition").value = product.condition;
+  document.getElementById("adminContent").style.display = "none";
+  document.getElementById("editProductForm").style.display = "block";
+}
+
+// Функция для обновления товара
+function updateProduct() {
+  const index = Number(document.getElementById("editProductIndex").value);
+  const name = document.getElementById("editProductName").value;
+  const category = document.getElementById("editProductCategory").value;
+  const sizesInput = document
+    .getElementById("editProductSizes")
+    .value.split(",")
+    .map((s) => s.trim())
+    .filter((s) => s);
+  const price = Number(document.getElementById("editProductPrice").value);
+  const condition = Number(
+    document.getElementById("editProductCondition").value
+  );
+  const imageInput = document.getElementById("editProductImage");
+
+  if (
+    name &&
+    category &&
+    !isNaN(price) &&
+    !isNaN(condition) &&
+    condition >= 1 &&
+    condition <= 5
+  ) {
+    getBase64Images(imageInput.files, (base64Images) => {
+      products[index] = {
+        ...products[index],
+        name,
+        category,
+        size: sizesInput.length > 0 ? sizesInput : [],
+        price,
+        condition,
+        images: base64Images.length > 0 ? base64Images : products[index].images,
+      };
+      alert("Товар обновлён!");
+      document.getElementById("editProductForm").style.display = "none";
+      document.getElementById("adminContent").style.display = "block";
+      renderAdmin();
+      renderCatalog(filterProducts());
+    });
+  } else {
+    alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
+  }
+}
+
+// Функция для отмены редактирования товара
+function cancelEditProduct() {
+  document.getElementById("editProductForm").style.display = "none";
+  document.getElementById("adminContent").style.display = "block";
 }
 
 // Функция для удаления товара
@@ -490,6 +571,40 @@ function addReview() {
   } else {
     alert("Заполните все поля!");
   }
+}
+
+// Функция для редактирования отзыва
+function editReview(index) {
+  const review = reviews[index];
+  document.getElementById("editReviewIndex").value = index;
+  document.getElementById("editReviewUsername").value = review.username;
+  document.getElementById("editReviewText").value = review.text;
+  document.getElementById("adminContent2").style.display = "none";
+  document.getElementById("editReviewForm").style.display = "block";
+}
+
+// Функция для обновления отзыва
+function updateReview() {
+  const index = Number(document.getElementById("editReviewIndex").value);
+  const username = document.getElementById("editReviewUsername").value;
+  const text = document.getElementById("editReviewText").value;
+
+  if (username && text) {
+    reviews[index] = { username, text };
+    alert("Отзыв обновлён!");
+    document.getElementById("editReviewForm").style.display = "none";
+    document.getElementById("adminContent2").style.display = "block";
+    renderAdmin();
+    renderReviews();
+  } else {
+    alert("Заполните все поля!");
+  }
+}
+
+// Функция для отмены редактирования отзыва
+function cancelEditReview() {
+  document.getElementById("editReviewForm").style.display = "none";
+  document.getElementById("adminContent2").style.display = "block";
 }
 
 // Функция для удаления отзыва
@@ -628,6 +743,8 @@ function showScreen(screenId) {
       document.getElementById("adminContent2").style.display = "none";
       document.getElementById("adminContent3").style.display = "none";
       document.getElementById("adminContent4").style.display = "none";
+      document.getElementById("editProductForm").style.display = "none";
+      document.getElementById("editReviewForm").style.display = "none";
     }
   }
 }

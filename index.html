@@ -123,8 +123,28 @@
             id="newProductCondition"
             placeholder="Состояние (1-5)"
           />
-          <input type="file" id="newProductImage" accept="image/*" />
+          <input type="file" id="newProductImage" accept="image/*" multiple />
           <button onclick="addProduct()">Добавить товар</button>
+        </div>
+        <div class="admin-section" id="editProductForm" style="display: none">
+          <h3>Редактировать товар</h3>
+          <input type="hidden" id="editProductIndex" />
+          <input type="text" id="editProductName" placeholder="Название" />
+          <input type="text" id="editProductCategory" placeholder="Категория" />
+          <input
+            type="text"
+            id="editProductSizes"
+            placeholder="Размеры (через запятую, например: M,L)"
+          />
+          <input type="number" id="editProductPrice" placeholder="Цена" />
+          <input
+            type="number"
+            id="editProductCondition"
+            placeholder="Состояние (1-5)"
+          />
+          <input type="file" id="editProductImage" accept="image/*" multiple />
+          <button onclick="updateProduct()">Сохранить изменения</button>
+          <button onclick="cancelEditProduct()">Отмена</button>
         </div>
         <div class="admin-section" id="adminContent2" style="display: none">
           <h3>Добавить отзыв</h3>
@@ -135,6 +155,18 @@
           />
           <input type="text" id="newReviewText" placeholder="Текст отзыва" />
           <button onclick="addReview()">Добавить отзыв</button>
+        </div>
+        <div class="admin-section" id="editReviewForm" style="display: none">
+          <h3>Редактировать отзыв</h3>
+          <input type="hidden" id="editReviewIndex" />
+          <input
+            type="text"
+            id="editReviewUsername"
+            placeholder="Имя пользователя"
+          />
+          <input type="text" id="editReviewText" placeholder="Текст отзыва" />
+          <button onclick="updateReview()">Сохранить изменения</button>
+          <button onclick="cancelEditReview()">Отмена</button>
         </div>
         <div class="admin-section" id="adminContent3" style="display: none">
           <h3>Товары</h3>
