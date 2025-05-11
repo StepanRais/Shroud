@@ -1,96 +1,6 @@
-// Загрузка данных из localStorage при старте
-const loadData = () => {
-  const savedProducts = localStorage.getItem("products");
-  const savedReviews = localStorage.getItem("reviews");
-  if (savedProducts) products = JSON.parse(savedProducts);
-  if (savedReviews) reviews = JSON.parse(savedReviews);
-};
-
-// Сохранение данных в localStorage
-const saveData = () => {
-  localStorage.setItem("products", JSON.stringify(products));
-  localStorage.setItem("reviews", JSON.stringify(reviews));
-};
-
-// Список товаров
-let products = [
-  {
-    id: 1,
-    name: "Bal Sagoth",
-    year: 1999,
-    size: ["XL"],
-    price: 6000,
-    images: ["./images/bal.jpg", "./images/bal2.jpg"],
-    category: "Лонгслив",
-    condition: 5,
-  },
-  {
-    id: 2,
-    name: "Incarnated",
-    year: 1999,
-    size: ["L"],
-    price: 8000,
-    images: ["./images/incar.jpg", "./images/incar2.jpg"],
-    category: "Лонгслив",
-    condition: 5,
-  },
-  {
-    id: 3,
-    name: "Opeth",
-    year: 2002,
-    size: ["L"],
-    price: 4500,
-    images: ["./images/Opeth.jpg", "./images/Opeth2.jpg"],
-    category: "Футболка",
-    condition: 5,
-  },
-  {
-    id: 4,
-    name: "SOAD",
-    year: 2001,
-    size: ["M", "L"],
-    price: 7500,
-    images: ["./images/Soad.jpg", "./images/Soad2.jpg"],
-    category: "Футболка",
-    condition: 5,
-  },
-  {
-    id: 5,
-    name: "Machine Head",
-    year: 1995,
-    size: ["L", "XL"],
-    price: 13000,
-    images: ["./images/machinehead.jpg", "./images/machinehead2.jpg"],
-    category: "Худи",
-    condition: 4,
-  },
-  {
-    id: 6,
-    name: "Metallica",
-    year: 2005,
-    size: [],
-    price: 3000,
-    images: ["./images/metallica.jpg", "./images/metallica2.jpg"],
-    category: "Пряжка",
-    condition: 5,
-  },
-];
-
-// Список отзывов
-let reviews = [
-  {
-    username: "Алексей",
-    text: "Отличный магазин! Футболки в идеальном состоянии, доставка быстрая.",
-  },
-  {
-    username: "Марина",
-    text: "SOAD футболка просто огонь! Размер идеально подошел.",
-  },
-  {
-    username: "Дмитрий",
-    text: "Цены немного высокие, но качество того стоит.",
-  },
-];
+// Инициализация Telegram Web Apps
+const tg = window.Telegram.WebApp;
+tg.ready();
 
 // Корзина
 let cart = [];
@@ -106,12 +16,12 @@ let currentFilters = {
   conditions: [],
 };
 
-// Инициализация Telegram Web Apps
-const tg = window.Telegram.WebApp;
-tg.ready();
-
 // Список ID администраторов (замени на реальные ID)
 const adminUserIds = [570191364];
+
+// Переменные для хранения данных (больше не используем localStorage)
+let products = [];
+let reviews = [];
 
 // Проверка, является ли пользователь администратором
 function checkIfAdminUser() {
@@ -132,17 +42,31 @@ function renderBottomNav() {
   }
 }
 
-// Загружаем данные при старте
-loadData();
+// Загрузка данных с сервера при старте
+async function loadData() {
+  try {
+    const productsResponse = await axios.get(
+      "http://localhost:3000/api/products"
+    );
+    products = productsResponse.data;
 
-// Проверяем пользователя и отображаем навигацию
-checkIfAdminUser();
-renderBottomNav();
+    const reviewsResponse = await axios.get(
+      "http://localhost:3000/api/reviews"
+    );
+    reviews = reviewsResponse.data;
 
-// Функция проверки пароля администратора
-function checkAdminPassword() {
+    renderCatalog(); // Обновляем каталог после загрузки данных
+    renderReviews(); // Обновляем отзывы
+  } catch (error) {
+    console.error("Ошибка при загрузке данных:", error);
+    alert("Не удалось загрузить данные. Проверьте подключение к серверу.");
+  }
+}
+
+// Проверка пароля администратора
+async function checkAdminPassword() {
   const password = document.getElementById("adminPassword").value;
-  const correctPassword = "admin123";
+  const correctPassword = "admin123"; // В будущем перенесём на сервер
 
   if (password === correctPassword) {
     isAdminAuthenticated = true;
@@ -153,6 +77,7 @@ function checkAdminPassword() {
     document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent3").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
+    await loadData(); // Загружаем данные для админ-панели
     renderAdmin();
     alert("Доступ открыт!");
   } else {
@@ -423,12 +348,10 @@ function renderAdmin() {
     `;
     reviewListDiv.appendChild(reviewItemDiv);
   });
-
-  saveData();
 }
 
 // Функция для добавления товара
-function addProduct() {
+async function addProduct() {
   if (!isAdminAuthenticated) return;
 
   const name = document.getElementById("newProductName").value;
@@ -452,7 +375,7 @@ function addProduct() {
     condition >= 1 &&
     condition <= 5
   ) {
-    getBase64Images(imageInput.files, (base64Images) => {
+    getBase64Images(imageInput.files, async (base64Images) => {
       const newProduct = {
         id:
           products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
@@ -467,15 +390,27 @@ function addProduct() {
         category,
         condition,
       };
-      products.push(newProduct);
-      alert("Товар добавлен!");
-      document.getElementById("newProductName").value = "";
-      document.getElementById("newProductCategory").value = "";
-      document.getElementById("newProductSizes").value = "";
-      document.getElementById("newProductPrice").value = "";
-      document.getElementById("newProductCondition").value = "";
-      imageInput.value = "";
-      renderAdmin();
+      try {
+        const response = await axios.post(
+          "http://localhost:3000/api/products",
+          newProduct
+        );
+        products.push(response.data);
+        // Уведомляем подписчиков о новом товаре
+        await axios.post("http://localhost:3000/notify", newProduct);
+        alert("Товар добавлен!");
+        document.getElementById("newProductName").value = "";
+        document.getElementById("newProductCategory").value = "";
+        document.getElementById("newProductSizes").value = "";
+        document.getElementById("newProductPrice").value = "";
+        document.getElementById("newProductCondition").value = "";
+        imageInput.value = "";
+        renderAdmin();
+        renderCatalog(filterProducts());
+      } catch (error) {
+        console.error(error);
+        alert("Ошибка при добавлении товара.");
+      }
     });
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
@@ -496,8 +431,9 @@ function editProduct(index) {
 }
 
 // Функция для обновления товара
-function updateProduct() {
+async function updateProduct() {
   const index = Number(document.getElementById("editProductIndex").value);
+  const product = products[index];
   const name = document.getElementById("editProductName").value;
   const category = document.getElementById("editProductCategory").value;
   const sizesInput = document
@@ -519,21 +455,31 @@ function updateProduct() {
     condition >= 1 &&
     condition <= 5
   ) {
-    getBase64Images(imageInput.files, (base64Images) => {
-      products[index] = {
-        ...products[index],
+    getBase64Images(imageInput.files, async (base64Images) => {
+      const updatedProduct = {
+        ...product,
         name,
         category,
         size: sizesInput.length > 0 ? sizesInput : [],
         price,
         condition,
-        images: base64Images.length > 0 ? base64Images : products[index].images,
+        images: base64Images.length > 0 ? base64Images : product.images,
       };
-      alert("Товар обновлён!");
-      document.getElementById("editProductForm").style.display = "none";
-      document.getElementById("adminContent").style.display = "block";
-      renderAdmin();
-      renderCatalog(filterProducts());
+      try {
+        await axios.put(
+          `http://localhost:3000/api/products/${product._id}`,
+          updatedProduct
+        );
+        products[index] = updatedProduct;
+        alert("Товар обновлён!");
+        document.getElementById("editProductForm").style.display = "none";
+        document.getElementById("adminContent").style.display = "block";
+        renderAdmin();
+        renderCatalog(filterProducts());
+      } catch (error) {
+        console.error(error);
+        alert("Ошибка при обновлении товара.");
+      }
     });
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
@@ -547,27 +493,44 @@ function cancelEditProduct() {
 }
 
 // Функция для удаления товара
-function deleteProduct(index) {
+async function deleteProduct(index) {
   if (!isAdminAuthenticated) return;
-  products.splice(index, 1);
-  renderAdmin();
-  renderCatalog(filterProducts());
+  const product = products[index];
+  try {
+    await axios.delete(`http://localhost:3000/api/products/${product._id}`);
+    products.splice(index, 1);
+    renderAdmin();
+    renderCatalog(filterProducts());
+  } catch (error) {
+    console.error(error);
+    alert("Ошибка при удалении товара.");
+  }
 }
 
 // Функция для добавления отзыва
-function addReview() {
+async function addReview() {
   if (!isAdminAuthenticated) return;
 
   const username = document.getElementById("newReviewUsername").value;
   const text = document.getElementById("newReviewText").value;
 
   if (username && text) {
-    const newReview = { username, text };
-    reviews.push(newReview);
-    alert("Отзыв добавлен!");
-    document.getElementById("newReviewUsername").value = "";
-    document.getElementById("newReviewText").value = "";
-    renderAdmin();
+    const newReview = { username, text, approved: true };
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/reviews",
+        newReview
+      );
+      reviews.push(response.data);
+      alert("Отзыв добавлен!");
+      document.getElementById("newReviewUsername").value = "";
+      document.getElementById("newReviewText").value = "";
+      renderAdmin();
+      renderReviews();
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка при добавлении отзыва.");
+    }
   } else {
     alert("Заполните все поля!");
   }
@@ -584,18 +547,29 @@ function editReview(index) {
 }
 
 // Функция для обновления отзыва
-function updateReview() {
+async function updateReview() {
   const index = Number(document.getElementById("editReviewIndex").value);
+  const review = reviews[index];
   const username = document.getElementById("editReviewUsername").value;
   const text = document.getElementById("editReviewText").value;
 
   if (username && text) {
-    reviews[index] = { username, text };
-    alert("Отзыв обновлён!");
-    document.getElementById("editReviewForm").style.display = "none";
-    document.getElementById("adminContent2").style.display = "block";
-    renderAdmin();
-    renderReviews();
+    const updatedReview = { ...review, username, text };
+    try {
+      await axios.put(
+        `http://localhost:3000/api/reviews/${review._id}`,
+        updatedReview
+      );
+      reviews[index] = updatedReview;
+      alert("Отзыв обновлён!");
+      document.getElementById("editReviewForm").style.display = "none";
+      document.getElementById("adminContent2").style.display = "block";
+      renderAdmin();
+      renderReviews();
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка при обновлении отзыва.");
+    }
   } else {
     alert("Заполните все поля!");
   }
@@ -608,11 +582,18 @@ function cancelEditReview() {
 }
 
 // Функция для удаления отзыва
-function deleteReview(index) {
+async function deleteReview(index) {
   if (!isAdminAuthenticated) return;
-  reviews.splice(index, 1);
-  renderAdmin();
-  renderReviews();
+  const review = reviews[index];
+  try {
+    await axios.delete(`http://localhost:3000/api/reviews/${review._id}`);
+    reviews.splice(index, 1);
+    renderAdmin();
+    renderReviews();
+  } catch (error) {
+    console.error(error);
+    alert("Ошибка при удалении отзыва.");
+  }
 }
 
 // Функция для отображения отзывов
@@ -635,8 +616,6 @@ function renderReviews() {
     `;
     reviewsDiv.appendChild(reviewDiv);
   });
-
-  saveData();
 }
 
 // Функция для добавления в корзину
@@ -710,7 +689,7 @@ function getCurrentProductId() {
   return products.find((p) => p.name === productName).id;
 }
 
-// Функция для отображения звезд
+// Функция для отображения звёзд
 function renderStars(count) {
   let stars = "";
   for (let i = 0; i < 5; i++) {
@@ -762,5 +741,7 @@ tg.MainButton.onClick(() => {
   showScreen("cartScreen");
 });
 
-// Отображаем каталог при загрузке
-renderCatalog();
+// Проверяем пользователя, отображаем навигацию и загружаем данные
+checkIfAdminUser();
+renderBottomNav();
+loadData();
