@@ -1,12 +1,3 @@
-// Проверка, работает ли Mini App в Telegram
-if (!window.Telegram || !window.Telegram.WebApp) {
-  document.body.innerHTML = `
-    <h1>Это приложение работает только в Telegram!</h1>
-    <p>Пожалуйста, откройте его через бота @YourBotName в Telegram.</p>
-  `;
-  throw new Error("Mini App работает только в Telegram");
-}
-
 // Инициализация Telegram Web Apps
 const tg = window.Telegram.WebApp;
 tg.ready();
