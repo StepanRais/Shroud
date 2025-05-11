@@ -35,7 +35,7 @@ bot.action("open_shop", (ctx) => {
         [
           {
             text: "Запустить WebApp",
-            web_app: { url: "https://shroud-rosy.vercel.app/" },
+            web_app: { url: "https://shroud.onrender.com/" },
           },
         ],
       ],
