@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path"); // Добавляем модуль path
 const { notifySubscribers } = require("./bot/index.js");
 
 dotenv.config();
@@ -9,6 +10,14 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Указываем серверу, где искать статические файлы (index.html, scripts.js, images)
+app.use(express.static(path.join(__dirname, "public"))); // Папка public будет содержать фронтенд
+
+// Если файл не найден (например, API), перенаправляем на index.html
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // Подключение к MongoDB
 mongoose
