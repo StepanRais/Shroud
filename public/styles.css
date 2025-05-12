@@ -232,6 +232,61 @@ body {
   margin-right: auto;
 }
 
+/* Стили для доставки */
+#deliveryScreen {
+  padding: 20px;
+  text-align: center;
+}
+
+#deliveryScreen h2 {
+  margin-bottom: 10px;
+}
+
+#deliveryScreen p {
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+#deliveryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+#deliveryForm label {
+  text-align: left;
+  font-weight: bold;
+}
+
+#deliveryForm input,
+#deliveryForm textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+#deliveryForm textarea {
+  resize: vertical;
+  height: 80px;
+}
+
+#deliveryForm button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#deliveryForm button:last-child {
+  background-color: #6c757d;
+}
+
 /* Стили для отзывов */
 .reviews {
   display: flex;

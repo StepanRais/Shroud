@@ -35,6 +35,41 @@
         <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
       </div>
 
+      <!-- Экран доставки -->
+      <div class="screen" id="deliveryScreen">
+        <h2>Оформление доставки</h2>
+        <p>Доставка осуществляется только через "Почта России".</p>
+        <form id="deliveryForm">
+          <label for="deliveryName">Ваше имя:</label>
+          <input
+            type="text"
+            id="deliveryName"
+            placeholder="Введите ваше имя"
+            required
+          />
+
+          <label for="deliveryAddress">Адрес доставки:</label>
+          <textarea
+            id="deliveryAddress"
+            placeholder="Введите адрес доставки"
+            required
+          ></textarea>
+
+          <label for="deliveryPhone">Телефон:</label>
+          <input
+            type="tel"
+            id="deliveryPhone"
+            placeholder="+79991234567"
+            required
+          />
+
+          <button type="button" onclick="submitDelivery()">Далее</button>
+          <button type="button" onclick="showScreen('cartScreen')">
+            Назад
+          </button>
+        </form>
+      </div>
+
       <!-- Экран отзывов -->
       <div class="screen" id="reviewsScreen">
         <h2>Отзывы</h2>

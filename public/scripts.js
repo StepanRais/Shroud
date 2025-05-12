@@ -7,6 +7,10 @@ let cart = [];
 let isAdminAuthenticated = false;
 let isAdminUser = false;
 
+//Доставка
+let deliveryData = null;
+let pendingPurchase = null; // Хранит данные о покупке (один товар или все)
+
 // Переменные для хранения текущих фильтров
 let currentFilters = {
   categories: [],
@@ -497,7 +501,9 @@ async function deleteProduct(index) {
   if (!isAdminAuthenticated) return;
   const product = products[index];
   try {
-    await axios.delete(`https://shroud.onrender.com/api/products/${product._id}`);
+    await axios.delete(
+      `https://shroud.onrender.com/api/products/${product._id}`
+    );
     products.splice(index, 1);
     renderAdmin();
     renderCatalog(filterProducts());
@@ -648,16 +654,8 @@ function removeFromCart(index) {
 // Функция для покупки одного товара
 function buyItem(index) {
   const item = cart[index];
-  alert(
-    `Вы купили ${item.name} (Размер: ${
-      item.selectedSize || "Без размера"
-    }) за ${item.price}₽!`
-  );
-  cart.splice(index, 1);
-  renderCart();
-  if (cart.length === 0) {
-    tg.MainButton.hide();
-  }
+  pendingPurchase = { type: "single", index, item };
+  showScreen("deliveryScreen");
 }
 
 // Функция для покупки всех товаров
@@ -666,11 +664,8 @@ function buyAll() {
     alert("Корзина пуста!");
     return;
   }
-  const total = cart.reduce((sum, item) => sum + item.price, 0);
-  alert(`Вы купили все товары на сумму ${total}₽!`);
-  cart = [];
-  renderCart();
-  tg.MainButton.hide();
+  pendingPurchase = { type: "all", items: [...cart] };
+  showScreen("deliveryScreen");
 }
 
 // Функция для смены изображения
@@ -740,6 +735,51 @@ function showReviews() {
 tg.MainButton.onClick(() => {
   showScreen("cartScreen");
 });
+
+// Функция доставки
+function submitDelivery() {
+  const name = document.getElementById("deliveryName").value.trim();
+  const address = document.getElementById("deliveryAddress").value.trim();
+  const phone = document.getElementById("deliveryPhone").value.trim();
+
+  if (!name || !address || !phone) {
+    alert("Пожалуйста, заполните все поля!");
+    return;
+  }
+
+  // Сохраняем данные доставки
+  deliveryData = { name, address, phone };
+
+  // Пока просто показываем alert, позже заменим на оплату
+  if (pendingPurchase.type === "single") {
+    const item = pendingPurchase.item;
+    alert(
+      `Вы купили ${item.name} (Размер: ${
+        item.selectedSize || "Без размера"
+      }) за ${
+        item.price
+      }₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
+    );
+    cart.splice(pendingPurchase.index, 1);
+  } else if (pendingPurchase.type === "all") {
+    const total = pendingPurchase.items.reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
+    alert(
+      `Вы купили все товары на сумму ${total}₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
+    );
+    cart = [];
+  }
+
+  deliveryData = null;
+  pendingPurchase = null;
+  renderCart();
+  if (cart.length === 0) {
+    tg.MainButton.hide();
+  }
+  showScreen("catalogScreen");
+}
 
 // Проверяем пользователя, отображаем навигацию и загружаем данные
 checkIfAdminUser();
