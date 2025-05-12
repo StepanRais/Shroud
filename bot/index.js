@@ -1,10 +1,10 @@
 const { Telegraf } = require("telegraf");
-const { MemorySession } = require("telegraf-session-local"); // Добавляем сессии
+const LocalSession = require("telegraf-session-local"); // Правильный импорт
 const axios = require("axios");
-require("dotenv").config();
+require("dotenv").config({ path: "../.env" });
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-bot.use(new MemorySession().middleware()); // Подключаем сессии
+bot.use(new LocalSession().middleware()); // Подключаем сессии
 
 // Флаги для отслеживания состояния
 let isWaitingForReview = false;
