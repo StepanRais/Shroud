@@ -137,7 +137,7 @@ app.put("/api/reviews/:id", async (req, res) => {
 });
 
 app.delete("/api/reviews/:id", async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id); // ОШИБКА: Должно быть Review, а не Product
+  await Review.findByIdAndDelete(req.params.id);
   res.json({ message: "Review deleted" });
 });
 
