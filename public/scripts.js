@@ -750,25 +750,44 @@ function submitDelivery() {
   // Сохраняем данные доставки
   deliveryData = { name, address, phone };
 
-  // Пока просто показываем alert, позже заменим на оплату
+  // Переходим к экрану оплаты
+  showScreen("paymentScreen");
+}
+
+// Запрос данных для оплаты
+function requestPaymentDetails() {
+  if (!pendingPurchase || !deliveryData) {
+    alert("Ошибка: данные заказа отсутствуют!");
+    showScreen("catalogScreen");
+    return;
+  }
+
+  let total;
   if (pendingPurchase.type === "single") {
-    const item = pendingPurchase.item;
-    alert(
-      `Вы купили ${item.name} (Размер: ${
-        item.selectedSize || "Без размера"
-      }) за ${
-        item.price
-      }₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
-    );
+    total = pendingPurchase.item.price;
+  } else {
+    total = pendingPurchase.items.reduce((sum, item) => sum + item.price, 0);
+  }
+
+  // Отправляем команду боту через Telegram API
+  const userId = tg.initDataUnsafe.user.id;
+  tg.sendData(
+    JSON.stringify({
+      action: "request_payment_details",
+      total: total,
+      userId: userId,
+    })
+  );
+
+  // Активируем кнопку "Я оплатил" (пользователь подтвердит через бота)
+  document.getElementById("confirmPaymentBtn").disabled = false;
+}
+
+// Подтверждение оплаты (временная заглушка, позже заменим)
+function confirmPayment() {
+  if (pendingPurchase.type === "single") {
     cart.splice(pendingPurchase.index, 1);
-  } else if (pendingPurchase.type === "all") {
-    const total = pendingPurchase.items.reduce(
-      (sum, item) => sum + item.price,
-      0
-    );
-    alert(
-      `Вы купили все товары на сумму ${total}₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
-    );
+  } else {
     cart = [];
   }
 
@@ -780,6 +799,14 @@ function submitDelivery() {
   }
   showScreen("catalogScreen");
 }
+
+// Обработчик сообщений от бота
+tg.onEvent("webAppData", (data) => {
+  const parsedData = JSON.parse(data);
+  if (parsedData.action === "payment_confirmed") {
+    confirmPayment();
+  }
+});
 
 // Проверяем пользователя, отображаем навигацию и загружаем данные
 checkIfAdminUser();

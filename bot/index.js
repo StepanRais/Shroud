@@ -151,7 +151,9 @@ bot.on("message", async (msgCtx) => {
 // Функция для уведомления подписчиков о новом товаре
 async function notifySubscribers(product) {
   try {
-    const response = await axios.get("https://shroud.onrender.com/api/subscribers");
+    const response = await axios.get(
+      "https://shroud.onrender.com/api/subscribers"
+    );
     const subscribers = response.data;
     for (const subscriber of subscribers) {
       await bot.telegram.sendMessage(
@@ -163,6 +165,44 @@ async function notifySubscribers(product) {
     console.error("Ошибка при отправке уведомлений:", error);
   }
 }
+
+// Данные для перевода (замени на свои)
+const paymentDetails = {
+  phone: "+79994684757", // Твой номер телефона для перевода
+  recipientName: "Степан Р. ВТБ", // Твоё имя
+};
+
+// Обработчик данных от Mini App
+bot.on("web_app_data", async (ctx) => {
+  const data = JSON.parse(ctx.webAppData.data);
+  if (data.action === "request_payment_details") {
+    const total = data.total;
+    const userId = data.userId;
+    const message = `Для оплаты заказа на сумму ${total}₽ переведите деньги на карту:\n📞 Номер телефона: ${paymentDetails.phone}\n👤 Имя и Банк получателя: ${paymentDetails.recipientName}\n\nПосле оплаты нажмите "Я оплатил".`;
+
+    await ctx.reply(message, {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Я оплатил",
+              callback_data: `confirm_payment:${userId}:${total}`,
+            },
+          ],
+        ],
+      },
+    });
+  }
+});
+
+// Обработчик подтверждения оплаты
+bot.action(/confirm_payment:(\d+):(\d+)/, async (ctx) => {
+  ctx.answerCbQuery();
+  await ctx.reply("Спасибо за оплату! Ваш заказ принят.");
+  // Отправляем данные обратно в Mini App
+  ctx.replyWithWebAppData(JSON.stringify({ action: "payment_confirmed" }));
+  // Здесь позже добавим уведомление администратору (следующий этап)
+});
 
 bot.launch();
 console.log("Бот запущен!");
