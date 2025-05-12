@@ -1,23 +1,14 @@
 const { Telegraf } = require("telegraf");
-const LocalSession = require("telegraf-session-local"); // Правильный импорт
 const axios = require("axios");
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config();
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-bot.use(new LocalSession().middleware()); // Подключаем сессии
 
 // Флаги для отслеживания состояния
 let isWaitingForReview = false;
 let isWaitingForPhoto = false;
 let isWaitingForText = false;
 let fileUrl = ""; // Переменная для хранения URL фото
-
-// Данные для перевода
-const paymentDetails = {
-  phone: "+79994684757", // Твой номер телефона
-  recipientName: "Степан Р.", // Твоё имя
-  bank: "ВТБ", // Название банка
-};
 
 // Команда /start
 bot.start((ctx) => {
@@ -154,75 +145,6 @@ bot.on("message", async (msgCtx) => {
     }
     isWaitingForText = false;
     fileUrl = ""; // Сбрасываем fileUrl
-  }
-});
-
-// Обработчик для запроса оплаты
-bot.on("web_app_data", async (ctx) => {
-  console.log("Получено событие web_app_data:", ctx.update); // Лог всего события
-  try {
-    if (!ctx.webAppData || !ctx.webAppData.data) {
-      console.error(
-        "ctx.webAppData или ctx.webAppData.data отсутствует:",
-        ctx.webAppData
-      );
-      await ctx.reply("Ошибка: данные от WebApp не получены.");
-      return;
-    }
-
-    const data = JSON.parse(ctx.webAppData.data);
-    console.log("Данные от WebApp:", data); // Лог распарсенных данных
-
-    if (data.action === "request_payment") {
-      const total = data.total;
-      const userId = data.userId;
-      const deliveryData = data.deliveryData;
-
-      console.log("Обработка request_payment:", {
-        total,
-        userId,
-        deliveryData,
-      }); // Лог перед отправкой
-
-      const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
-
-      await ctx.reply(message, {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Я оплатил",
-                callback_data: `confirm_payment:${userId}:${total}`,
-              },
-            ],
-          ],
-        },
-      });
-
-      // Сохраняем данные заказа
-      ctx.session[userId] = { total, deliveryData };
-      console.log("Данные заказа сохранены в сессии:", ctx.session[userId]);
-    } else {
-      console.log("Неизвестное действие:", data.action);
-      await ctx.reply("Ошибка: неизвестное действие от WebApp.");
-    }
-  } catch (error) {
-    console.error("Ошибка обработки web_app_data:", error);
-    await ctx.reply("Произошла ошибка при обработке данных. Попробуйте снова.");
-  }
-});
-
-// Обработчик подтверждения оплаты
-bot.action(/confirm_payment:(\d+):(\d+)/, async (ctx) => {
-  ctx.answerCbQuery();
-  const userId = ctx.match[1];
-  const total = ctx.match[2];
-
-  if (ctx.session && ctx.session[userId]) {
-    await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
-    delete ctx.session[userId]; // Очищаем данные после обработки
-  } else {
-    await ctx.reply("Ошибка: данные заказа не найдены.");
   }
 });
 

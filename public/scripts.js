@@ -7,7 +7,6 @@ let cart = [];
 let isAdminAuthenticated = false;
 let isAdminUser = false;
 
-//Доставка
 let deliveryData = null;
 let pendingPurchase = null; // Хранит данные о покупке (один товар или все)
 
@@ -736,7 +735,6 @@ tg.MainButton.onClick(() => {
   showScreen("cartScreen");
 });
 
-// Функция доставки
 function submitDelivery() {
   const name = document.getElementById("deliveryName").value.trim();
   const address = document.getElementById("deliveryAddress").value.trim();
@@ -750,27 +748,34 @@ function submitDelivery() {
   // Сохраняем данные доставки
   deliveryData = { name, address, phone };
 
-  // Рассчитываем сумму
-  let total;
+  // Пока просто показываем alert, позже заменим на оплату
   if (pendingPurchase.type === "single") {
-    total = pendingPurchase.item.price;
-  } else {
-    total = pendingPurchase.items.reduce((sum, item) => sum + item.price, 0);
+    const item = pendingPurchase.item;
+    alert(
+      `Вы купили ${item.name} (Размер: ${
+        item.selectedSize || "Без размера"
+      }) за ${
+        item.price
+      }₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
+    );
+    cart.splice(pendingPurchase.index, 1);
+  } else if (pendingPurchase.type === "all") {
+    const total = pendingPurchase.items.reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
+    alert(
+      `Вы купили все товары на сумму ${total}₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
+    );
+    cart = [];
   }
 
-  // Отправляем данные боту для запроса оплаты
-  const userId = tg.initDataUnsafe.user.id;
-  const dataToSend = {
-    action: "request_payment",
-    total: total,
-    userId: userId,
-    deliveryData: deliveryData,
-  };
-  console.log("Отправляем данные боту:", dataToSend); // Лог перед отправкой
-  tg.sendData(JSON.stringify(dataToSend));
-
-  // Сообщаем пользователю, что он должен дождаться ответа
-  alert("Данные отправлены боту. Ожидайте инструкции по оплате в чате.");
+  deliveryData = null;
+  pendingPurchase = null;
+  renderCart();
+  if (cart.length === 0) {
+    tg.MainButton.hide();
+  }
   showScreen("catalogScreen");
 }
 
