@@ -15,6 +15,37 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 // Указываем серверу, где искать статические файлы
 app.use(express.static(path.join(__dirname, "public")));
 
+// Инициализация тестовых данных
+const initialSetup = async () => {
+  const count = await Product.countDocuments();
+  if (count === 0) {
+    const products = [
+      {
+        id: 1,
+        name: "Bal Sagoth",
+        year: 1999,
+        size: ["XL"],
+        price: 6000,
+        images: ["https://via.placeholder.com/150"],
+        category: "Лонгслив",
+        condition: 5,
+      },
+      {
+        id: 2,
+        name: "Opeth",
+        year: 2002,
+        size: ["L"],
+        price: 4500,
+        images: ["https://via.placeholder.com/150"],
+        category: "Футболка",
+        condition: 5,
+      },
+    ];
+    await Product.insertMany(products);
+    console.log("Тестовые товары добавлены в базу.");
+  }
+};
+
 // Подключение к MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
