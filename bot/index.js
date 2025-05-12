@@ -166,19 +166,22 @@ async function notifySubscribers(product) {
   }
 }
 
-// Данные для перевода (замени на свои)
+// Данные для перевода
 const paymentDetails = {
-  phone: "+79994684757", // Твой номер телефона для перевода
-  recipientName: "Степан Р. ВТБ", // Твоё имя
+  phone: "+79994684757", // Твой номер телефона
+  recipientName: "Степан Р.", // Твоё имя
+  bank: "ВТБ", // Название банка
 };
 
-// Обработчик данных от Mini App
+// Обработчик для запроса оплаты
 bot.on("web_app_data", async (ctx) => {
   const data = JSON.parse(ctx.webAppData.data);
-  if (data.action === "request_payment_details") {
+  if (data.action === "request_payment") {
     const total = data.total;
     const userId = data.userId;
-    const message = `Для оплаты заказа на сумму ${total}₽ переведите деньги на карту:\n📞 Номер телефона: ${paymentDetails.phone}\n👤 Имя и Банк получателя: ${paymentDetails.recipientName}\n\nПосле оплаты нажмите "Я оплатил".`;
+    const deliveryData = data.deliveryData;
+
+    const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
 
     await ctx.reply(message, {
       reply_markup: {
@@ -192,16 +195,26 @@ bot.on("web_app_data", async (ctx) => {
         ],
       },
     });
+
+    // Сохраняем данные заказа для подтверждения (например, в память бота)
+    ctx.session = ctx.session || {};
+    ctx.session[userId] = { total, deliveryData };
   }
 });
 
 // Обработчик подтверждения оплаты
 bot.action(/confirm_payment:(\d+):(\d+)/, async (ctx) => {
   ctx.answerCbQuery();
-  await ctx.reply("Спасибо за оплату! Ваш заказ принят.");
-  // Отправляем данные обратно в Mini App
-  ctx.replyWithWebAppData(JSON.stringify({ action: "payment_confirmed" }));
-  // Здесь позже добавим уведомление администратору (следующий этап)
+  const userId = ctx.match[1];
+  const total = ctx.match[2];
+
+  // Проверяем, есть ли данные заказа
+  if (ctx.session && ctx.session[userId]) {
+    await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
+    delete ctx.session[userId]; // Очищаем данные после обработки
+  } else {
+    await ctx.reply("Ошибка: данные заказа не найдены.");
+  }
 });
 
 bot.launch();

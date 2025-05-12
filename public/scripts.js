@@ -750,18 +750,7 @@ function submitDelivery() {
   // Сохраняем данные доставки
   deliveryData = { name, address, phone };
 
-  // Переходим к экрану оплаты
-  showScreen("paymentScreen");
-}
-
-// Запрос данных для оплаты
-function requestPaymentDetails() {
-  if (!pendingPurchase || !deliveryData) {
-    alert("Ошибка: данные заказа отсутствуют!");
-    showScreen("catalogScreen");
-    return;
-  }
-
+  // Рассчитываем сумму
   let total;
   if (pendingPurchase.type === "single") {
     total = pendingPurchase.item.price;
@@ -769,44 +758,20 @@ function requestPaymentDetails() {
     total = pendingPurchase.items.reduce((sum, item) => sum + item.price, 0);
   }
 
-  // Отправляем команду боту через Telegram API
+  // Отправляем данные боту для запроса оплаты
   const userId = tg.initDataUnsafe.user.id;
   tg.sendData(
     JSON.stringify({
-      action: "request_payment_details",
+      action: "request_payment",
       total: total,
       userId: userId,
+      deliveryData: deliveryData,
     })
   );
 
-  // Активируем кнопку "Я оплатил" (пользователь подтвердит через бота)
-  document.getElementById("confirmPaymentBtn").disabled = false;
-}
-
-// Подтверждение оплаты (временная заглушка, позже заменим)
-function confirmPayment() {
-  if (pendingPurchase.type === "single") {
-    cart.splice(pendingPurchase.index, 1);
-  } else {
-    cart = [];
-  }
-
-  deliveryData = null;
-  pendingPurchase = null;
-  renderCart();
-  if (cart.length === 0) {
-    tg.MainButton.hide();
-  }
+  // Переходим к каталогу (пользователь дождётся сообщения от бота)
   showScreen("catalogScreen");
 }
-
-// Обработчик сообщений от бота
-tg.onEvent("webAppData", (data) => {
-  const parsedData = JSON.parse(data);
-  if (parsedData.action === "payment_confirmed") {
-    confirmPayment();
-  }
-});
 
 // Проверяем пользователя, отображаем навигацию и загружаем данные
 checkIfAdminUser();
