@@ -46,12 +46,12 @@ function renderBottomNav() {
 async function loadData() {
   try {
     const productsResponse = await axios.get(
-      "http://localhost:3000/api/products"
+      "https://shroud.onrender.com/api/products"
     );
     products = productsResponse.data;
 
     const reviewsResponse = await axios.get(
-      "http://localhost:3000/api/reviews"
+      "https://shroud.onrender.com/api/reviews"
     );
     reviews = reviewsResponse.data;
 
