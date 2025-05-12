@@ -1,14 +1,23 @@
 const { Telegraf } = require("telegraf");
+const { MemorySession } = require("telegraf-session-local"); // Добавляем сессии
 const axios = require("axios");
 require("dotenv").config();
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+bot.use(new MemorySession().middleware()); // Подключаем сессии
 
 // Флаги для отслеживания состояния
 let isWaitingForReview = false;
 let isWaitingForPhoto = false;
 let isWaitingForText = false;
 let fileUrl = ""; // Переменная для хранения URL фото
+
+// Данные для перевода
+const paymentDetails = {
+  phone: "+79994684757", // Твой номер телефона
+  recipientName: "Степан Р.", // Твоё имя
+  bank: "ВТБ", // Название банка
+};
 
 // Команда /start
 bot.start((ctx) => {
@@ -148,6 +157,53 @@ bot.on("message", async (msgCtx) => {
   }
 });
 
+// Обработчик для запроса оплаты
+bot.on("web_app_data", async (ctx) => {
+  try {
+    const data = JSON.parse(ctx.webAppData.data);
+    if (data.action === "request_payment") {
+      const total = data.total;
+      const userId = data.userId;
+      const deliveryData = data.deliveryData;
+
+      const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
+
+      await ctx.reply(message, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Я оплатил",
+                callback_data: `confirm_payment:${userId}:${total}`,
+              },
+            ],
+          ],
+        },
+      });
+
+      // Сохраняем данные заказа
+      ctx.session[userId] = { total, deliveryData };
+    }
+  } catch (error) {
+    console.error("Ошибка обработки web_app_data:", error);
+    await ctx.reply("Произошла ошибка при обработке данных. Попробуйте снова.");
+  }
+});
+
+// Обработчик подтверждения оплаты
+bot.action(/confirm_payment:(\d+):(\d+)/, async (ctx) => {
+  ctx.answerCbQuery();
+  const userId = ctx.match[1];
+  const total = ctx.match[2];
+
+  if (ctx.session && ctx.session[userId]) {
+    await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
+    delete ctx.session[userId]; // Очищаем данные после обработки
+  } else {
+    await ctx.reply("Ошибка: данные заказа не найдены.");
+  }
+});
+
 // Функция для уведомления подписчиков о новом товаре
 async function notifySubscribers(product) {
   try {
@@ -165,57 +221,6 @@ async function notifySubscribers(product) {
     console.error("Ошибка при отправке уведомлений:", error);
   }
 }
-
-// Данные для перевода
-const paymentDetails = {
-  phone: "+79994684757", // Твой номер телефона
-  recipientName: "Степан Р.", // Твоё имя
-  bank: "ВТБ", // Название банка
-};
-
-// Обработчик для запроса оплаты
-bot.on("web_app_data", async (ctx) => {
-  const data = JSON.parse(ctx.webAppData.data);
-  if (data.action === "request_payment") {
-    const total = data.total;
-    const userId = data.userId;
-    const deliveryData = data.deliveryData;
-
-    const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
-
-    await ctx.reply(message, {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "Я оплатил",
-              callback_data: `confirm_payment:${userId}:${total}`,
-            },
-          ],
-        ],
-      },
-    });
-
-    // Сохраняем данные заказа для подтверждения (например, в память бота)
-    ctx.session = ctx.session || {};
-    ctx.session[userId] = { total, deliveryData };
-  }
-});
-
-// Обработчик подтверждения оплаты
-bot.action(/confirm_payment:(\d+):(\d+)/, async (ctx) => {
-  ctx.answerCbQuery();
-  const userId = ctx.match[1];
-  const total = ctx.match[2];
-
-  // Проверяем, есть ли данные заказа
-  if (ctx.session && ctx.session[userId]) {
-    await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
-    delete ctx.session[userId]; // Очищаем данные после обработки
-  } else {
-    await ctx.reply("Ошибка: данные заказа не найдены.");
-  }
-});
 
 bot.launch();
 console.log("Бот запущен!");
