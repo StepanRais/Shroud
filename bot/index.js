@@ -59,7 +59,7 @@ bot.action("subscribe", async (ctx) => {
   ctx.answerCbQuery();
   const subscriber = { userId: ctx.from.id };
   try {
-    await axios.post("http://localhost:3000/api/subscribers", subscriber);
+    await axios.post("https://shroud.onrender.com/api/subscribers", subscriber);
     ctx.reply("Вы подписаны на рассылку!");
   } catch (error) {
     ctx.reply("Ошибка при подписке. Попробуйте позже.");
@@ -93,7 +93,7 @@ bot.on("message", async (msgCtx) => {
       approved: false,
     };
     try {
-      await axios.post("http://localhost:3000/api/reviews", review);
+      await axios.post("https://shroud.onrender.com/api/reviews", review);
       await msgCtx.reply("Спасибо за отзыв! Он отправлен на проверку.");
       await bot.telegram.sendMessage(
         process.env.ADMIN_CHAT_ID,
@@ -131,7 +131,7 @@ bot.on("message", async (msgCtx) => {
       approved: false,
     };
     try {
-      await axios.post("http://localhost:3000/api/forms", form);
+      await axios.post("https://shroud.onrender.com/api/forms", form);
       await msgCtx.reply("Анкета принята на рассмотрение!");
       await bot.telegram.sendMessage(
         process.env.ADMIN_CHAT_ID,
@@ -151,7 +151,7 @@ bot.on("message", async (msgCtx) => {
 // Функция для уведомления подписчиков о новом товаре
 async function notifySubscribers(product) {
   try {
-    const response = await axios.get("http://localhost:3000/api/subscribers");
+    const response = await axios.get("https://shroud.onrender.com/api/subscribers");
     const subscribers = response.data;
     for (const subscriber of subscribers) {
       await bot.telegram.sendMessage(
