@@ -91,19 +91,30 @@ bot.action("visit_channel", (ctx) => {
 });
 
 // Обработка данных от Mini App
-bot.on("data", async (ctx) => {
-  const data = JSON.parse(ctx.data);
-  if (data.action === "requestPayment") {
-    const total = data.total;
-    const delivery = data.delivery;
-    const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
-    await ctx.reply(message, {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
-        ],
-      },
-    });
+bot.on("message", async (ctx) => {
+  const msg = ctx.message;
+
+  if (msg.web_app_data?.data) {
+    try {
+      const data = JSON.parse(msg.web_app_data.data);
+      console.log("Получены данные из WebApp:", data);
+      if (data.action === "requestPayment") {
+        const total = data.total;
+        const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
+        await ctx.reply(message, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
+            ],
+          },
+        });
+      } else {
+        ctx.reply("Получены данные из WebApp, но действие не распознано.");
+      }
+    } catch (e) {
+      console.error("Ошибка при разборе данных из WebApp:", e);
+      ctx.reply("Произошла ошибка при обработке данных.");
+    }
   }
 });
 
