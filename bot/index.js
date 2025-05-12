@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const paymentDetails = {
   phone: "+79994684757", // Номер телефона для перевода
-  recipientName: "Степан Р.", // Имя получателя
+  recipientName: "Степан Р", // Имя получателя
   bank: "ВТБ", // Название банка
 };
 
