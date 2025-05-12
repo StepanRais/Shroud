@@ -2,12 +2,6 @@ const { Telegraf } = require("telegraf");
 const axios = require("axios");
 require("dotenv").config();
 
-const paymentDetails = {
-  phone: "+79994684757", // Номер телефона для перевода
-  recipientName: "Степан Р.", // Имя получателя
-  bank: "ВТБ", // Название банка
-};
-
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 // Флаги для отслеживания состояния
@@ -90,12 +84,17 @@ bot.action("visit_channel", (ctx) => {
   ctx.reply("Присоединяйтесь к нашему каналу: @shroudshirt");
 });
 
-// Обработка данных от Mini App
-bot.on("data", async (ctx) => {
-  const data = JSON.parse(ctx.data);
+// Обработка данных от Mini App через web_app_data
+bot.on("web_app_data", async (ctx) => {
+  const data = JSON.parse(ctx.web_app_data.data);
   if (data.action === "requestPayment") {
     const total = data.total;
     const delivery = data.delivery;
+    const paymentDetails = {
+      phone: "+79994684757", // Замени на свой номер
+      recipientName: "Степан Р.", // Замени на своё имя
+      bank: "ВТБ", // Замени на название банка
+    };
     const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}. Имя получателя: ${paymentDetails.recipientName}. Банк: ${paymentDetails.bank}.`;
     await ctx.reply(message, {
       reply_markup: {
@@ -111,7 +110,7 @@ bot.on("data", async (ctx) => {
 bot.action("payment_confirmed", async (ctx) => {
   ctx.answerCbQuery();
   await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
-  // Здесь позже добавим уведомление администратору (на следующем этапе)
+  // Здесь позже добавим уведомление администратору
 });
 
 // Общий обработчик сообщений

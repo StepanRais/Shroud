@@ -757,13 +757,13 @@ function submitDelivery() {
   }
 
   // Отправляем запрос боту для показа инструкции оплаты
-  tg.sendData(
-    JSON.stringify({
-      action: "requestPayment",
-      total: total,
-      delivery: deliveryData,
-    })
-  );
+  const dataToSend = JSON.stringify({
+    action: "requestPayment",
+    total: total,
+    delivery: deliveryData,
+  });
+  console.log("Sending data to bot:", dataToSend); // Отладочный вывод
+  tg.sendData(dataToSend);
 
   // Покажем экран ожидания или оставим текущий
   showScreen("catalogScreen");
