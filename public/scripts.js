@@ -392,12 +392,12 @@ async function addProduct() {
       };
       try {
         const response = await axios.post(
-          "http://localhost:3000/api/products",
+          "https://shroud.onrender.com/api/products",
           newProduct
         );
         products.push(response.data);
         // Уведомляем подписчиков о новом товаре
-        await axios.post("http://localhost:3000/notify", newProduct);
+        await axios.post("https://shroud.onrender.com/notify", newProduct);
         alert("Товар добавлен!");
         document.getElementById("newProductName").value = "";
         document.getElementById("newProductCategory").value = "";
@@ -467,7 +467,7 @@ async function updateProduct() {
       };
       try {
         await axios.put(
-          `http://localhost:3000/api/products/${product._id}`,
+          `https://shroud.onrender.com/api/products/${product._id}`,
           updatedProduct
         );
         products[index] = updatedProduct;
@@ -497,7 +497,7 @@ async function deleteProduct(index) {
   if (!isAdminAuthenticated) return;
   const product = products[index];
   try {
-    await axios.delete(`http://localhost:3000/api/products/${product._id}`);
+    await axios.delete(`https://shroud.onrender.com/api/products/${product._id}`);
     products.splice(index, 1);
     renderAdmin();
     renderCatalog(filterProducts());
@@ -518,7 +518,7 @@ async function addReview() {
     const newReview = { username, text, approved: true };
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/reviews",
+        "https://shroud.onrender.com/api/reviews",
         newReview
       );
       reviews.push(response.data);
@@ -557,7 +557,7 @@ async function updateReview() {
     const updatedReview = { ...review, username, text };
     try {
       await axios.put(
-        `http://localhost:3000/api/reviews/${review._id}`,
+        `https://shroud.onrender.com/api/reviews/${review._id}`,
         updatedReview
       );
       reviews[index] = updatedReview;
@@ -586,7 +586,7 @@ async function deleteReview(index) {
   if (!isAdminAuthenticated) return;
   const review = reviews[index];
   try {
-    await axios.delete(`http://localhost:3000/api/reviews/${review._id}`);
+    await axios.delete(`https://shroud.onrender.com/api/reviews/${review._id}`);
     reviews.splice(index, 1);
     renderAdmin();
     renderReviews();
