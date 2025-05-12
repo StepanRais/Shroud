@@ -760,16 +760,17 @@ function submitDelivery() {
 
   // Отправляем данные боту для запроса оплаты
   const userId = tg.initDataUnsafe.user.id;
-  tg.sendData(
-    JSON.stringify({
-      action: "request_payment",
-      total: total,
-      userId: userId,
-      deliveryData: deliveryData,
-    })
-  );
+  const dataToSend = {
+    action: "request_payment",
+    total: total,
+    userId: userId,
+    deliveryData: deliveryData,
+  };
+  console.log("Отправляем данные боту:", dataToSend); // Лог перед отправкой
+  tg.sendData(JSON.stringify(dataToSend));
 
-  // Переходим к каталогу (пользователь дождётся сообщения от бота)
+  // Сообщаем пользователю, что он должен дождаться ответа
+  alert("Данные отправлены боту. Ожидайте инструкции по оплате в чате.");
   showScreen("catalogScreen");
 }
 
