@@ -748,34 +748,24 @@ function submitDelivery() {
   // Сохраняем данные доставки
   deliveryData = { name, address, phone };
 
-  // Пока просто показываем alert, позже заменим на оплату
+  // Рассчитываем сумму
+  let total = 0;
   if (pendingPurchase.type === "single") {
-    const item = pendingPurchase.item;
-    alert(
-      `Вы купили ${item.name} (Размер: ${
-        item.selectedSize || "Без размера"
-      }) за ${
-        item.price
-      }₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
-    );
-    cart.splice(pendingPurchase.index, 1);
+    total = pendingPurchase.item.price;
   } else if (pendingPurchase.type === "all") {
-    const total = pendingPurchase.items.reduce(
-      (sum, item) => sum + item.price,
-      0
-    );
-    alert(
-      `Вы купили все товары на сумму ${total}₽!\nДанные доставки:\nИмя: ${name}\nАдрес: ${address}\nТелефон: ${phone}`
-    );
-    cart = [];
+    total = pendingPurchase.items.reduce((sum, item) => sum + item.price, 0);
   }
 
-  deliveryData = null;
-  pendingPurchase = null;
-  renderCart();
-  if (cart.length === 0) {
-    tg.MainButton.hide();
-  }
+  // Отправляем запрос боту для показа инструкции оплаты
+  tg.sendData(
+    JSON.stringify({
+      action: "requestPayment",
+      total: total,
+      delivery: deliveryData,
+    })
+  );
+
+  // Покажем экран ожидания или оставим текущий
   showScreen("catalogScreen");
 }
 
