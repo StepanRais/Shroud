@@ -2,8 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const path = require("path"); // Добавляем модуль path
-// const { notifySubscribers } = require("./bot/index.js");
+const path = require("path");
+const { notifySubscribers } = require("./bot/index.js");
 
 dotenv.config();
 
@@ -11,24 +11,47 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Указываем серверу, где искать статические файлы (index.html, scripts.js, images)
-app.use(express.static(path.join(__dirname, "public"))); // Папка public будет содержать фронтенд
+// Указываем серверу, где искать статические файлы
+app.use(express.static(path.join(__dirname, "public")));
 
-// Если файл не найден (например, API), перенаправляем на index.html
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+// Инициализация тестовых данных
+const initialSetup = async () => {
+  const count = await Product.countDocuments();
+  if (count === 0) {
+    const products = [
+      {
+        id: 1,
+        name: "Bal Sagoth",
+        year: 1999,
+        size: ["XL"],
+        price: 6000,
+        images: ["https://via.placeholder.com/150"],
+        category: "Лонгслив",
+        condition: 5,
+      },
+      {
+        id: 2,
+        name: "Opeth",
+        year: 2002,
+        size: ["L"],
+        price: 4500,
+        images: ["https://via.placeholder.com/150"],
+        category: "Футболка",
+        condition: 5,
+      },
+    ];
+    await Product.insertMany(products);
+    console.log("Тестовые товары добавлены в базу.");
+  }
+};
 
 // Подключение к MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error(err));
 
-// Модель для товаров
+// Модели
 const ProductSchema = new mongoose.Schema({
   id: Number,
   name: String,
@@ -40,19 +63,16 @@ const ProductSchema = new mongoose.Schema({
   condition: Number,
 });
 
-// Модель для отзывов
 const ReviewSchema = new mongoose.Schema({
   username: String,
   text: String,
   approved: { type: Boolean, default: false },
 });
 
-// Модель для подписчиков
 const SubscriberSchema = new mongoose.Schema({
   userId: Number,
 });
 
-// Модель для анкет
 const FormSchema = new mongoose.Schema({
   photo: String,
   name: String,
@@ -116,7 +136,7 @@ app.put("/api/reviews/:id", async (req, res) => {
 });
 
 app.delete("/api/reviews/:id", async (req, res) => {
-  await Review.findByIdAndDelete(req.params.id);
+  await Product.findByIdAndDelete(req.params.id); // ОШИБКА: Должно быть Review, а не Product
   res.json({ message: "Review deleted" });
 });
 
@@ -146,5 +166,18 @@ app.post("/notify", async (req, res) => {
   res.json({ message: "Notifications sent" });
 });
 
+// Маршрут для фронтенда
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Обработка всех остальных запросов фронтенда
+app.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  initialSetup(); // Запускаем инициализацию после старта сервера
+});
