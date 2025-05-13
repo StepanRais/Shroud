@@ -1,5 +1,6 @@
 const { Telegraf } = require("telegraf");
 const axios = require("axios");
+const FormData = require("form-data"); // Импортируем form-data
 require("dotenv").config();
 
 const paymentDetails = {
@@ -198,7 +199,9 @@ bot.on("text", async (ctx) => {
         process.env.ADMIN_CHAT_ID,
         `Новая анкета от @${
           ctx.from.username || ctx.from.first_name || "Аноним"
-        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: https://shroud.onrender.com${userStates[userId].fileUrl}`
+        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: https://shroud.onrender.com${
+          userStates[userId].fileUrl
+        }`
       );
     } catch (error) {
       ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
@@ -219,24 +222,19 @@ bot.on("photo", async (ctx) => {
     try {
       // Получаем ссылку на файл
       fileUrl = await bot.telegram.getFileLink(photo);
-      
+
       // Загружаем фото как поток
-      const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
-      
-      // Создаём FormData
+      const response = await axios.get(fileUrl, { responseType: "stream" });
+
+      // Создаём FormData с использованием form-data
       const formData = new FormData();
-      
-      // Передаём Buffer напрямую, указав имя файла
-      formData.append("photo", Buffer.from(response.data), {
-        filename: "photo.jpg",
-        contentType: "image/jpeg",
-      });
+      formData.append("photo", response.data, "photo.jpg");
 
       // Отправляем на сервер
       const uploadResponse = await axios.post(
         "https://shroud.onrender.com/api/upload",
         formData,
-        { headers: { ...formData.getHeaders() } } // Добавляем заголовки для multipart/form-data
+        { headers: formData.getHeaders() } // Используем заголовки от form-data
       );
       fileUrl = uploadResponse.data.url;
 
