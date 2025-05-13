@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
-// const { notifySubscribers } = require("./bot/index.js");
+const { notifySubscribers } = require("./bot/index.js");
 const multer = require("multer");
 
 // Настройка multer для сохранения файлов
