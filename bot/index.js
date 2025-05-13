@@ -109,9 +109,15 @@ bot.on("message", async (ctx) => {
 
         // Сохраняем заказ в памяти
         pendingOrders[userId] = { total, delivery, items };
+        console.log(
+          "Сохранён заказ для userId:",
+          userId,
+          pendingOrders[userId]
+        );
 
         const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
         const callbackData = `payment_confirmed_${userId}`; // Короткий идентификатор
+        console.log("Формируем callback_data:", callbackData);
 
         await ctx.reply(message, {
           reply_markup: {
@@ -131,16 +137,19 @@ bot.on("message", async (ctx) => {
 });
 
 // Подтверждение оплаты
-bot.action("payment_confirmed", async (ctx) => {
+bot.action(/payment_confirmed_(\d+)/, async (ctx) => {
   ctx.answerCbQuery();
 
+  // Логируем callback_data для отладки
+  console.log("Callback data received:", ctx.update.callback_query.data);
+
   // Извлекаем userId из callback_data
-  const callbackData = ctx.update.callback_query.data;
-  const userId = callbackData.split("_")[1];
+  const userId = ctx.match[1];
 
   // Получаем заказ из памяти
   const order = pendingOrders[userId];
   if (!order) {
+    console.log("Order not found for userId:", userId);
     await ctx.reply("Заказ не найден. Попробуйте снова.");
     return;
   }
