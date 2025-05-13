@@ -252,17 +252,21 @@ bot.on("photo", async (ctx) => {
 });
 
 // Уведомление подписчиков о новом товаре
-async function notifySubscribers(product) {
+async function notifySubscribers(data) {
   try {
-    const response = await axios.get(
-      "https://shroud.onrender.com/api/subscribers"
-    );
-    const subscribers = response.data;
-    for (const subscriber of subscribers) {
-      await bot.telegram.sendMessage(
-        subscriber.userId,
-        `Новый товар в магазине: ${product.name} (${product.category}) за ${product.price}₽!`
+    if (data.name && data.category && data.price) {
+      const response = await axios.get(
+        "https://shroud.onrender.com/api/subscribers"
       );
+      const subscribers = response.data;
+      for (const subscriber of subscribers) {
+        await bot.telegram.sendMessage(
+          subscriber.userId,
+          `Новое поступление ${data.category} "${data.name}"`,
+          { parse_mode: "HTML" }
+        );
+        console.log(`Уведомление отправлено пользователю ${subscriber.userId}`);
+      }
     }
   } catch (error) {
     console.error("Ошибка при отправке уведомлений:", error);
