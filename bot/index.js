@@ -204,7 +204,29 @@ bot.on("message", async (msgCtx) => {
     isWaitingForReview = false;
   } else if (isWaitingForPhoto && msgCtx.message.photo) {
     const photo = msgCtx.message.photo.pop().file_id;
-    fileUrl = await bot.telegram.getFileLink(photo);
+    const fileUrl = await bot.telegram.getFileLink(photo);
+
+    // Загружаем фото на сервер
+    try {
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+      const formData = new FormData();
+      formData.append("photo", Buffer.from(response.data), "photo.jpg");
+
+      const uploadResponse = await axios.post(
+        "https://shroud.onrender.com/api/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      fileUrl = uploadResponse.data.url; // Получаем URL загруженного файла
+    } catch (error) {
+      console.error("Ошибка при загрузке фото на сервер:", error);
+      msgCtx.reply("Ошибка при загрузке фото. Попробуйте снова.");
+      isWaitingForPhoto = false;
+      return;
+    }
+
     msgCtx.reply(
       "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
       {
@@ -220,7 +242,7 @@ bot.on("message", async (msgCtx) => {
       .split(",")
       .map((s) => s.trim());
     const form = {
-      photo: fileUrl,
+      photo: [fileUrl], // Сохраняем как массив ссылок
       name,
       size,
       condition,
@@ -235,7 +257,7 @@ bot.on("message", async (msgCtx) => {
         process.env.ADMIN_CHAT_ID,
         `Новая анкета от @${
           msgCtx.from.username || msgCtx.from.first_name || "Аноним"
-        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${fileUrl}`
+        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: https://shroud.onrender.com${fileUrl}`
       );
     } catch (error) {
       msgCtx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
