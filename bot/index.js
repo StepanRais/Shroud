@@ -1,6 +1,6 @@
 const { Telegraf } = require("telegraf");
 const axios = require("axios");
-const FormData = require("form-data");
+const FormData = require("form-data"); // Импортируем form-data
 require("dotenv").config();
 
 const paymentDetails = {
@@ -11,6 +11,8 @@ const paymentDetails = {
 
 const pendingOrders = {};
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+
+// Хранилище состояний пользователей
 const userStates = {};
 
 // Команда /start
@@ -55,7 +57,7 @@ bot.action("subscribe", async (ctx) => {
     ctx.reply("Вы подписаны на рассылку!");
   } catch (error) {
     ctx.reply("Ошибка при подписке. Попробуйте позже.");
-    console.error("Ошибка при подписке:", error);
+    console.error(error);
   }
 });
 
@@ -174,7 +176,7 @@ bot.on("text", async (ctx) => {
       );
     } catch (error) {
       ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
-      console.error("Ошибка при отправке отзыва:", error);
+      console.error(error);
     }
     delete userStates[userId];
   } else if (state === "waiting_for_form_text") {
@@ -203,7 +205,7 @@ bot.on("text", async (ctx) => {
       );
     } catch (error) {
       ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
-      console.error("Ошибка при отправке анкеты:", error);
+      console.error(error);
     }
     delete userStates[userId];
   }
@@ -218,14 +220,21 @@ bot.on("photo", async (ctx) => {
     const photo = ctx.message.photo.pop().file_id;
     let fileUrl;
     try {
+      // Получаем ссылку на файл
       fileUrl = await bot.telegram.getFileLink(photo);
+
+      // Загружаем фото как поток
       const response = await axios.get(fileUrl, { responseType: "stream" });
+
+      // Создаём FormData с использованием form-data
       const formData = new FormData();
       formData.append("photo", response.data, "photo.jpg");
+
+      // Отправляем на сервер
       const uploadResponse = await axios.post(
         "https://shroud.onrender.com/api/upload",
         formData,
-        { headers: formData.getHeaders() }
+        { headers: formData.getHeaders() } // Используем заголовки от form-data
       );
       fileUrl = uploadResponse.data.url;
 
@@ -243,44 +252,20 @@ bot.on("photo", async (ctx) => {
 });
 
 // Уведомление подписчиков о новом товаре
-async function notifySubscribers(data) {
-  console.log("Запуск notifySubscribers с данными:", data);
+async function notifySubscribers(product) {
   try {
-    if (!data.name || !data.category) {
-      console.warn("Отсутствуют обязательные поля (name или category), рассылка отменена");
-      return;
-    }
-
-    const response = await axios.get("https://shroud.onrender.com/api/subscribers");
+    const response = await axios.get(
+      "https://shroud.onrender.com/api/subscribers"
+    );
     const subscribers = response.data;
-    console.log(`Найдено подписчиков: ${subscribers.length}`);
-
-    if (subscribers.length === 0) {
-      console.log("Подписчики отсутствуют, рассылка не выполнена");
-      return;
-    }
-
-    const message = `Новое поступление: ${data.category} "${data.name}"${
-      data.price ? ` - ${data.price}₽` : ""
-    }${data.images && data.images[0] ? `\nПосмотреть: https://shroud.onrender.com` : ""}`;
-
     for (const subscriber of subscribers) {
-      try {
-        if (!subscriber.userId) {
-          console.warn(`Некорректный userId для подписчика:`, subscriber);
-          continue;
-        }
-        await bot.telegram.sendMessage(subscriber.userId, message, {
-          parse_mode: "HTML",
-        });
-        console.log(`Уведомление отправлено пользователю ${subscriber.userId}`);
-      } catch (sendError) {
-        console.error(`Ошибка отправки уведомления пользователю ${subscriber.userId}:`, sendError);
-      }
+      await bot.telegram.sendMessage(
+        subscriber.userId,
+        `Новый товар в магазине: ${product.name} (${product.category}) за ${product.price}₽!`
+      );
     }
-    console.log("Рассылка завершена");
   } catch (error) {
-    console.error("Ошибка в notifySubscribers:", error);
+    console.error("Ошибка при отправке уведомлений:", error);
   }
 }
 

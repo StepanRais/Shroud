@@ -366,15 +366,8 @@ async function addProduct() {
     formData.append("price", price);
     formData.append("category", category);
     formData.append("condition", condition);
-
-    // Логирование выбранных изображений
-    if (imageInput.files.length === 0) {
-      console.log("Изображение не выбрано, будет использована заглушка");
-    } else {
-      console.log(`Выбрано ${imageInput.files.length} изображений`);
-      for (let i = 0; i < imageInput.files.length; i++) {
-        formData.append("images", imageInput.files[i]);
-      }
+    for (let i = 0; i < imageInput.files.length; i++) {
+      formData.append("images", imageInput.files[i]);
     }
 
     try {
@@ -383,38 +376,21 @@ async function addProduct() {
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
-
-      // Обновляем список товаров с сервера
-      const productsResponse = await axios.get(
-        "https://shroud.onrender.com/api/products"
-      );
-      products = productsResponse.data;
-
+      products.push(response.data);
+      // Уведомляем подписчиков о новом товаре
+      await axios.post("https://shroud.onrender.com/notify", response.data);
       alert("Товар добавлен!");
-
-      // Попытка уведомить подписчиков
-      try {
-        await axios.post("https://shroud.onrender.com/notify", response.data);
-        console.log("Уведомления отправлены");
-      } catch (notifyError) {
-        console.error("Ошибка при отправке уведомлений:", notifyError);
-        alert("Товар добавлен, но уведомления не отправлены.");
-      }
-
-      // Очистка формы
       document.getElementById("newProductName").value = "";
       document.getElementById("newProductCategory").value = "";
       document.getElementById("newProductSizes").value = "";
       document.getElementById("newProductPrice").value = "";
       document.getElementById("newProductCondition").value = "";
       imageInput.value = "";
-
-      // Обновление UI
       renderAdmin();
       renderCatalog(filterProducts());
     } catch (error) {
-      console.error("Ошибка при добавлении товара:", error);
-      alert("Ошибка при добавлении товара: " + error.message);
+      console.error(error);
+      alert("Ошибка при добавлении товара.");
     }
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
