@@ -217,15 +217,26 @@ bot.on("photo", async (ctx) => {
     const photo = ctx.message.photo.pop().file_id;
     let fileUrl;
     try {
+      // Получаем ссылку на файл
       fileUrl = await bot.telegram.getFileLink(photo);
+      
+      // Загружаем фото как поток
       const response = await axios.get(fileUrl, { responseType: "arraybuffer" });
+      
+      // Создаём FormData
       const formData = new FormData();
-      formData.append("photo", Buffer.from(response.data), "photo.jpg");
+      
+      // Передаём Buffer напрямую, указав имя файла
+      formData.append("photo", Buffer.from(response.data), {
+        filename: "photo.jpg",
+        contentType: "image/jpeg",
+      });
 
+      // Отправляем на сервер
       const uploadResponse = await axios.post(
         "https://shroud.onrender.com/api/upload",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { ...formData.getHeaders() } } // Добавляем заголовки для multipart/form-data
       );
       fileUrl = uploadResponse.data.url;
 
