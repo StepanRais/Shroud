@@ -8,6 +8,8 @@ const paymentDetails = {
   bank: "ВТБ", // Название банка
 };
 
+const pendingOrders = {}; // Хранилище заказов по userId
+
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 // Флаги для отслеживания состояния
@@ -103,13 +105,13 @@ bot.on("message", async (ctx) => {
         const total = data.total;
         const delivery = data.delivery || {};
         const items = data.items || [];
+        const userId = ctx.from.id;
+
+        // Сохраняем заказ в памяти
+        pendingOrders[userId] = { total, delivery, items };
+
         const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
-        const callbackData = JSON.stringify({
-          action: "payment_confirmed",
-          total,
-          delivery,
-          items,
-        });
+        const callbackData = `payment_confirmed_${userId}`; // Короткий идентификатор
 
         await ctx.reply(message, {
           reply_markup: {
@@ -132,29 +134,40 @@ bot.on("message", async (ctx) => {
 bot.action("payment_confirmed", async (ctx) => {
   ctx.answerCbQuery();
 
-  // Извлекаем данные из callback_data
-  const callbackData = JSON.parse(ctx.update.callback_query.data);
-  const { total, delivery, items } = callbackData;
+  // Извлекаем userId из callback_data
+  const callbackData = ctx.update.callback_query.data;
+  const userId = callbackData.split("_")[1];
+
+  // Получаем заказ из памяти
+  const order = pendingOrders[userId];
+  if (!order) {
+    await ctx.reply("Заказ не найден. Попробуйте снова.");
+    return;
+  }
 
   // Формируем список товаров
   const itemsList =
-    items.length > 0
-      ? items
+    order.items.length > 0
+      ? order.items
           .map((item) => `- ${item.name} (${item.size}) - ${item.price}₽`)
           .join("\n")
       : "Товары не указаны";
 
   // Формируем сообщение для администратора
-  const userId = ctx.from.id;
   const username = ctx.from.username || ctx.from.first_name || "Аноним";
-  const message = `Новый заказ!\nПользователь: ${username} (ID: ${userId})\nСумма: ${total} рублей\nДанные доставки:\n- Имя: ${
-    delivery.name || "Не указано"
-  }\n- Адрес: ${delivery.address || "Не указан"}\n- Телефон: ${
-    delivery.phone || "Не указан"
+  const message = `Новый заказ!\nПользователь: ${username} (ID: ${userId})\nСумма: ${
+    order.total
+  } рублей\nДанные доставки:\n- Имя: ${
+    order.delivery.name || "Не указано"
+  }\n- Адрес: ${order.delivery.address || "Не указан"}\n- Телефон: ${
+    order.delivery.phone || "Не указан"
   }\nТовары:\n${itemsList}`;
 
   // Отправляем сообщение администратору
   await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
+
+  // Очищаем заказ из памяти
+  delete pendingOrders[userId];
 
   // Отвечаем пользователю
   await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
