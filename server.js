@@ -4,27 +4,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 // const { notifySubscribers } = require("./bot/index.js");
-const multer = require("multer");
-
-// Настройка multer для сохранения файлов
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads/"); // Папка для хранения файлов
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Уникальное имя файла
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// Создаём папку uploads, если её нет
-const fs = require("fs");
-const uploadDir = path.join(__dirname, "public/uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
 
 dotenv.config();
 
@@ -96,7 +75,7 @@ const SubscriberSchema = new mongoose.Schema({
 });
 
 const FormSchema = new mongoose.Schema({
-  photo: [String],
+  photo: String,
   name: String,
   size: String,
   condition: String,
@@ -110,58 +89,24 @@ const Review = mongoose.model("Review", ReviewSchema);
 const Subscriber = mongoose.model("Subscriber", SubscriberSchema);
 const Form = mongoose.model("Form", FormSchema);
 
-// Маршрут для загрузки фото
-app.post("/api/upload", upload.single("photo"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "Файл не загружен" });
-  }
-  const fileUrl = `/uploads/${req.file.filename}`; // Относительный путь к файлу
-  res.json({ url: fileUrl });
-});
-
 // API для товаров
 app.get("/api/products", async (req, res) => {
   const products = await Product.find();
   res.json(products);
 });
 
-app.post("/api/products", upload.array("images", 5), async (req, res) => {
-  const { id, name, year, size, price, category, condition } = req.body;
-  const images = req.files
-    ? req.files.map((file) => `/uploads/${file.filename}`)
-    : ["https://via.placeholder.com/150"];
-  const product = new Product({
-    id,
-    name,
-    year,
-    size: size ? size.split(",").map((s) => s.trim()) : [],
-    price,
-    images,
-    category,
-    condition,
-  });
+app.post("/api/products", async (req, res) => {
+  const product = new Product(req.body);
   await product.save();
   res.json(product);
 });
 
-app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
-  const { name, year, size, price, category, condition } = req.body;
-  const updatedProduct = await Product.findById(req.params.id);
-  if (!updatedProduct) {
-    return res.status(404).json({ error: "Товар не найден" });
-  }
-  updatedProduct.name = name;
-  updatedProduct.year = year;
-  updatedProduct.size = size ? size.split(",").map((s) => s.trim()) : [];
-  updatedProduct.price = price;
-  updatedProduct.category = category;
-  updatedProduct.condition = condition;
-  if (req.files && req.files.length > 0) {
-    updatedProduct.images = req.files.map(
-      (file) => `/uploads/${file.filename}`
-    );
-  }
-  await updatedProduct.save();
+app.put("/api/products/:id", async (req, res) => {
+  const updatedProduct = await Product.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
   res.json(updatedProduct);
 });
 

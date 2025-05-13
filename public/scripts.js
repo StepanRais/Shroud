@@ -88,6 +88,29 @@ async function checkAdminPassword() {
   }
 }
 
+// Функция для преобразования файлов в base64
+function getBase64Images(files, callback) {
+  const base64Images = [];
+  let completed = 0;
+
+  if (files.length === 0) {
+    callback([]);
+    return;
+  }
+
+  for (let i = 0; i < files.length; i++) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      base64Images[i] = event.target.result;
+      completed++;
+      if (completed === files.length) {
+        callback(base64Images);
+      }
+    };
+    reader.readAsDataURL(files[i]);
+  }
+}
+
 // Функция для отображения каталога
 function renderCatalog(filteredProducts = products) {
   const catalogDiv = document.getElementById("catalog");
@@ -355,43 +378,43 @@ async function addProduct() {
     condition >= 1 &&
     condition <= 5
   ) {
-    const formData = new FormData();
-    formData.append(
-      "id",
-      products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1
-    );
-    formData.append("name", name);
-    formData.append("year", new Date().getFullYear());
-    formData.append("size", sizesInput.join(","));
-    formData.append("price", price);
-    formData.append("category", category);
-    formData.append("condition", condition);
-    for (let i = 0; i < imageInput.files.length; i++) {
-      formData.append("images", imageInput.files[i]);
-    }
-
-    try {
-      const response = await axios.post(
-        "https://shroud.onrender.com/api/products",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      products.push(response.data);
-      // Уведомляем подписчиков о новом товаре
-      await axios.post("https://shroud.onrender.com/notify", response.data);
-      alert("Товар добавлен!");
-      document.getElementById("newProductName").value = "";
-      document.getElementById("newProductCategory").value = "";
-      document.getElementById("newProductSizes").value = "";
-      document.getElementById("newProductPrice").value = "";
-      document.getElementById("newProductCondition").value = "";
-      imageInput.value = "";
-      renderAdmin();
-      renderCatalog(filterProducts());
-    } catch (error) {
-      console.error(error);
-      alert("Ошибка при добавлении товара.");
-    }
+    getBase64Images(imageInput.files, async (base64Images) => {
+      const newProduct = {
+        id:
+          products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
+        name,
+        year: new Date().getFullYear(),
+        size: sizesInput.length > 0 ? sizesInput : [],
+        price,
+        images:
+          base64Images.length > 0
+            ? base64Images
+            : ["https://via.placeholder.com/150"],
+        category,
+        condition,
+      };
+      try {
+        const response = await axios.post(
+          "https://shroud.onrender.com/api/products",
+          newProduct
+        );
+        products.push(response.data);
+        // Уведомляем подписчиков о новом товаре
+        await axios.post("https://shroud.onrender.com/notify", newProduct);
+        alert("Товар добавлен!");
+        document.getElementById("newProductName").value = "";
+        document.getElementById("newProductCategory").value = "";
+        document.getElementById("newProductSizes").value = "";
+        document.getElementById("newProductPrice").value = "";
+        document.getElementById("newProductCondition").value = "";
+        imageInput.value = "";
+        renderAdmin();
+        renderCatalog(filterProducts());
+      } catch (error) {
+        console.error(error);
+        alert("Ошибка при добавлении товара.");
+      }
+    });
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
   }
@@ -435,33 +458,32 @@ async function updateProduct() {
     condition >= 1 &&
     condition <= 5
   ) {
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("year", product.year);
-    formData.append("size", sizesInput.join(","));
-    formData.append("price", price);
-    formData.append("category", category);
-    formData.append("condition", condition);
-    for (let i = 0; i < imageInput.files.length; i++) {
-      formData.append("images", imageInput.files[i]);
-    }
-
-    try {
-      const response = await axios.put(
-        `https://shroud.onrender.com/api/products/${product._id}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      products[index] = response.data;
-      alert("Товар обновлён!");
-      document.getElementById("editProductForm").style.display = "none";
-      document.getElementById("adminContent").style.display = "block";
-      renderAdmin();
-      renderCatalog(filterProducts());
-    } catch (error) {
-      console.error(error);
-      alert("Ошибка при обновлении товара.");
-    }
+    getBase64Images(imageInput.files, async (base64Images) => {
+      const updatedProduct = {
+        ...product,
+        name,
+        category,
+        size: sizesInput.length > 0 ? sizesInput : [],
+        price,
+        condition,
+        images: base64Images.length > 0 ? base64Images : product.images,
+      };
+      try {
+        await axios.put(
+          `https://shroud.onrender.com/api/products/${product._id}`,
+          updatedProduct
+        );
+        products[index] = updatedProduct;
+        alert("Товар обновлён!");
+        document.getElementById("editProductForm").style.display = "none";
+        document.getElementById("adminContent").style.display = "block";
+        renderAdmin();
+        renderCatalog(filterProducts());
+      } catch (error) {
+        console.error(error);
+        alert("Ошибка при обновлении товара.");
+      }
+    });
   } else {
     alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
   }
