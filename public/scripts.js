@@ -750,20 +750,34 @@ function submitDelivery() {
 
   // Рассчитываем сумму
   let total = 0;
+  let items = [];
   if (pendingPurchase.type === "single") {
     total = pendingPurchase.item.price;
+    items = [
+      {
+        name: pendingPurchase.item.name,
+        price: total,
+        size: pendingPurchase.item.selectedSize || "Без размера",
+      },
+    ];
   } else if (pendingPurchase.type === "all") {
     total = pendingPurchase.items.reduce((sum, item) => sum + item.price, 0);
+    items = pendingPurchase.items.map((item) => ({
+      name: item.name,
+      price: item.price,
+      size: item.selectedSize || "Без размера",
+    }));
   }
 
+  // Формируем данные для передачи в бота
+  const orderData = JSON.stringify({
+    action: "requestPayment",
+    total,
+    delivery: deliveryData,
+    items,
+  });
   // Отправляем запрос боту для показа инструкции оплаты
-  tg.sendData(
-    JSON.stringify({
-      action: "requestPayment",
-      total: total,
-      delivery: deliveryData,
-    })
-  );
+  tg.sendData(orderData);
 
   // Покажем экран ожидания или оставим текущий
   showScreen("catalogScreen");

@@ -98,13 +98,23 @@ bot.on("message", async (ctx) => {
     try {
       const data = JSON.parse(msg.web_app_data.data);
       console.log("Получены данные из WebApp:", data);
+
       if (data.action === "requestPayment") {
         const total = data.total;
+        const delivery = data.delivery || {};
+        const items = data.items || [];
         const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
+        const callbackData = JSON.stringify({
+          action: "payment_confirmed",
+          total,
+          delivery,
+          items,
+        });
+
         await ctx.reply(message, {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
+              [{ text: "Я оплатил", callback_data: callbackData }],
             ],
           },
         });
@@ -122,33 +132,26 @@ bot.on("message", async (ctx) => {
 bot.action("payment_confirmed", async (ctx) => {
   ctx.answerCbQuery();
 
-  // Получаем данные о заказе из контекста (они были переданы через web_app_data)
-  const userData =
-    ctx.update.callback_query.message.reply_to_message?.web_app_data?.data;
-  let orderDetails = { total: 0, items: [], delivery: {} };
-  if (userData) {
-    try {
-      const data = JSON.parse(userData);
-      if (data.action === "requestPayment") {
-        orderDetails.total = data.total;
-        orderDetails.delivery = data.delivery || {};
-        // Предполагаем, что items пока не передаются, добавим их позже при необходимости
-      }
-    } catch (e) {
-      console.error("Ошибка при разборе данных заказа:", e);
-    }
-  }
+  // Извлекаем данные из callback_data
+  const callbackData = JSON.parse(ctx.update.callback_query.data);
+  const { total, delivery, items } = callbackData;
+
+  // Формируем список товаров
+  const itemsList =
+    items.length > 0
+      ? items
+          .map((item) => `- ${item.name} (${item.size}) - ${item.price}₽`)
+          .join("\n")
+      : "Товары не указаны";
 
   // Формируем сообщение для администратора
   const userId = ctx.from.id;
   const username = ctx.from.username || ctx.from.first_name || "Аноним";
-  const message = `Новый заказ!\nПользователь: ${username} (ID: ${userId})\nСумма: ${
-    orderDetails.total
-  } рублей\nДанные доставки:\n- Имя: ${
-    orderDetails.delivery.name || "Не указано"
-  }\n- Адрес: ${orderDetails.delivery.address || "Не указан"}\n- Телефон: ${
-    orderDetails.delivery.phone || "Не указан"
-  }\nТовары: (пока не указаны, добавим позже)`;
+  const message = `Новый заказ!\nПользователь: ${username} (ID: ${userId})\nСумма: ${total} рублей\nДанные доставки:\n- Имя: ${
+    delivery.name || "Не указано"
+  }\n- Адрес: ${delivery.address || "Не указан"}\n- Телефон: ${
+    delivery.phone || "Не указан"
+  }\nТовары:\n${itemsList}`;
 
   // Отправляем сообщение администратору
   await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
