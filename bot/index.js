@@ -2,10 +2,6 @@ const { Telegraf } = require("telegraf");
 const axios = require("axios");
 require("dotenv").config();
 
-const userOrders = new Map();
-
-const ADMIN_CHAT_ID = "570191364";
-
 const paymentDetails = {
   phone: "+79994684757", // Номер телефона для перевода
   recipientName: "Степан Р", // Имя получателя
@@ -102,24 +98,9 @@ bot.on("message", async (ctx) => {
     try {
       const data = JSON.parse(msg.web_app_data.data);
       console.log("Получены данные из WebApp:", data);
-
       if (data.action === "requestPayment") {
-        const chatId = msg.chat.id;
-
-        // Сохраняем заказ
-        userOrders.set(chatId, {
-          name: data.name,
-          phone: data.phone,
-          address: data.address,
-          cart: data.cart,
-          username: msg.chat.username
-            ? `@${msg.chat.username}`
-            : "Нет username",
-          total: data.total,
-        });
-
-        const message = `Для оплаты переведите ${data.total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
-
+        const total = data.total;
+        const message = `Для оплаты переведите ${total} рублей на номер: ${paymentDetails.phone}.\nИмя получателя: ${paymentDetails.recipientName}.\nБанк: ${paymentDetails.bank}.`;
         await ctx.reply(message, {
           reply_markup: {
             inline_keyboard: [
@@ -139,43 +120,41 @@ bot.on("message", async (ctx) => {
 
 // Подтверждение оплаты
 bot.action("payment_confirmed", async (ctx) => {
-  const chatId = ctx.chat.id;
+  ctx.answerCbQuery();
 
-  await ctx.answerCbQuery();
-  await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
-
-  const order = userOrders.get(chatId);
-  if (order) {
-    const items = order.cart
-      .map((item) => `- ${item.name} x${item.count}`)
-      .join("\n");
-
-    const adminMessage = `
-🛒 *Новый оплаченный заказ!*
-
-👤 Имя: *${order.name}*
-📞 Телефон: *${order.phone}*
-🏠 Адрес: *${order.address}*
-💬 Telegram: ${order.username}
-
-📦 Товары:
-${items}
-
-💰 Сумма: *${order.total}* рублей
-`.trim();
-
-    await bot.sendMessage(ADMIN_CHAT_ID, adminMessage, {
-      parse_mode: "Markdown",
-    });
-
-    // Можно очистить заказ из Map после уведомления
-    userOrders.delete(chatId);
-  } else {
-    await bot.sendMessage(
-      ADMIN_CHAT_ID,
-      `❗️Покупатель нажал "Я оплатил", но данные заказа не найдены. chat_id: ${chatId}`
-    );
+  // Получаем данные о заказе из контекста (они были переданы через web_app_data)
+  const userData =
+    ctx.update.callback_query.message.reply_to_message?.web_app_data?.data;
+  let orderDetails = { total: 0, items: [], delivery: {} };
+  if (userData) {
+    try {
+      const data = JSON.parse(userData);
+      if (data.action === "requestPayment") {
+        orderDetails.total = data.total;
+        orderDetails.delivery = data.delivery || {};
+        // Предполагаем, что items пока не передаются, добавим их позже при необходимости
+      }
+    } catch (e) {
+      console.error("Ошибка при разборе данных заказа:", e);
+    }
   }
+
+  // Формируем сообщение для администратора
+  const userId = ctx.from.id;
+  const username = ctx.from.username || ctx.from.first_name || "Аноним";
+  const message = `Новый заказ!\nПользователь: ${username} (ID: ${userId})\nСумма: ${
+    orderDetails.total
+  } рублей\nДанные доставки:\n- Имя: ${
+    orderDetails.delivery.name || "Не указано"
+  }\n- Адрес: ${orderDetails.delivery.address || "Не указан"}\n- Телефон: ${
+    orderDetails.delivery.phone || "Не указан"
+  }\nТовары: (пока не указаны, добавим позже)`;
+
+  // Отправляем сообщение администратору
+  await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
+
+  // Отвечаем пользователю
+  await ctx.reply("Спасибо за покупку! Скоро с вами свяжется администратор.");
 });
 
 // Общий обработчик сообщений
