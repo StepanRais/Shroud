@@ -29,7 +29,7 @@ async function notifySubscribers(product) {
     console.error("Error sending notifications:", error.message);
     if (error.response) {
       console.error("Response status:", error.response.status);
-      console.error("Response data:", error.response.data");
+      console.error("Response data:", error.response.data);
     }
   }
 }
@@ -181,15 +181,14 @@ bot.on("photo", async (ctx) => {
     try {
       console.log("Photos received from user:", userId);
       const photos = ctx.message.photo;
-      for (const photo of photos) {
-        const fileUrl = await bot.telegram.getFileLink(photo.file_id);
-        const response = await axios.get(fileUrl, {
-          responseType: "arraybuffer",
-        });
-        const base64String = `data:image/jpeg;base64,${Buffer.from(response.data).toString("base64")}`;
-        userStates[userId].photos.push(base64String);
-      }
-      ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
+      const photo = photos[photos.length - 1]; // Берём только фото максимального размера
+      const fileUrl = await bot.telegram.getFileLink(photo.file_id);
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+      const base64String = `data:image/jpeg;base64,${Buffer.from(response.data).toString("base64")}`;
+      userStates[userId].photos.push(base64String);
+      ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'."); // Одно сообщение за группу фото
     } catch (error) {
       console.error("Error processing photo:", error.message);
       ctx.reply("Ошибка при загрузке фото. Попробуйте снова.");
@@ -236,6 +235,22 @@ bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
 
+  console.log(`Text received from user ${userId}: "${ctx.message.text}", state: ${state}`);
+
+  if (state === "waiting_for_photo" && ctx.message.text.toLowerCase() === "готово") {
+    console.log("Received 'Готово' from user:", userId);
+    if (userStates[userId].photos.length === 0) {
+      ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
+      return;
+    }
+    userStates[userId].state = "waiting_for_form_text";
+    ctx.reply(
+      "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
+      { reply_markup: { force_reply: true } }
+    );
+    return;
+  }
+
   if (state === "waiting_for_review") {
     try {
       console.log("Review received from user:", userId);
@@ -264,17 +279,10 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
     }
     delete userStates[userId];
-  } else if (state === "waiting_for_photo" && ctx.message.text.toLowerCase() === "готово") {
-    if (userStates[userId].photos.length === 0) {
-      ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
-      return;
-    }
-    userStates[userId].state = "waiting_for_form_text";
-    ctx.reply(
-      "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
-      { reply_markup: { force_reply: true } }
-    );
-  } else if (state === "waiting_for_form_text") {
+    return;
+  }
+
+  if (state === "waiting_for_form_text") {
     const [name, size, condition, category] = ctx.message.text
       .split(",")
       .map((s) => s.trim());
@@ -290,19 +298,9 @@ bot.on("text", async (ctx) => {
     try {
       console.log("Form submitted by user:", userId);
       await axios.post("https://shroud.onrender.com/api/forms", form);
-      const caption = `Новая анкета от @${ctx.from.username || ctx.from.first_name || "Аноним"}:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${userStates[userId].photos.length / 4} шт.`;
-      // Фильтруем фото, оставляя только уникальные (по максимальному размеру для каждого изображения)
-      const uniquePhotos = [];
-      const addedFileIds = new Set();
-      for (const photo of userStates[userId].photos) {
-        const fileId = photo.split(",")[1].slice(0, 10); // Берем часть base64 для уникальности
-        if (!addedFileIds.has(fileId)) {
-          addedFileIds.add(fileId);
-          uniquePhotos.push(photo);
-        }
-      }
-      if (uniquePhotos.length > 0) {
-        const mediaGroup = uniquePhotos.map((photo, index) => ({
+      const caption = `Новая анкета от @${ctx.from.username || ctx.from.first_name || "Аноним"}:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${userStates[userId].photos.length} шт.`;
+      if (userStates[userId].photos.length > 0) {
+        const mediaGroup = userStates[userId].photos.map((photo, index) => ({
           type: "photo",
           media: { source: Buffer.from(photo.split(",")[1], "base64") },
           caption: index === 0 ? caption : undefined, // Подпись только для первого фото
@@ -317,11 +315,12 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
     }
     delete userStates[userId];
+    return;
   }
 });
 
 // Экспорт для использования в server.js
-module.exports = { bot, notifySubscribers};
+module.exports = { bot, notifySubscribers };
 
 // Запуск бота только при прямом вызове файла
 if (require.main === module) {
