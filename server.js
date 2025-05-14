@@ -5,36 +5,62 @@ const dotenv = require("dotenv");
 const path = require("path");
 const { notifySubscribers } = require("./bot/index.js");
 const multer = require("multer");
-
-// Настройка multer для сохранения файлов
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads/"); // Папка для хранения файлов
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Уникальное имя файла
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// Создаём папку uploads, если её нет
 const fs = require("fs");
-const uploadDir = path.join(__dirname, "public/uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+
+// Настройка multer для обработки файлов в памяти
+const storage = multer.memoryStorage(); // Храним файлы в памяти, а не на диске
+const upload = multer({ storage: storage });
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" })); // Увеличиваем лимит до 10 MB
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
-// Указываем серверу, где искать статические файлы
 app.use(express.static(path.join(__dirname, "public")));
+
+// Подключение к MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error(err));
+
+// Модели
+const ProductSchema = new mongoose.Schema({
+  id: Number,
+  name: String,
+  year: Number,
+  size: [String],
+  price: Number,
+  images: [String], // Храним base64-строки
+  category: String,
+  condition: Number,
+});
+
+const ReviewSchema = new mongoose.Schema({
+  username: String,
+  text: String,
+  approved: { type: Boolean, default: false },
+});
+
+const SubscriberSchema = new mongoose.Schema({
+  userId: Number,
+});
+
+const FormSchema = new mongoose.Schema({
+  photo: [String], // Храним base64-строки
+  name: String,
+  size: String,
+  condition: String,
+  category: String,
+  userId: Number,
+  approved: { type: Boolean, default: false },
+});
+
+const Product = mongoose.model("Product", ProductSchema);
+const Review = mongoose.model("Review", ReviewSchema);
+const Subscriber = mongoose.model("Subscriber", SubscriberSchema);
+const Form = mongoose.model("Form", FormSchema);
 
 // Инициализация тестовых данных
 const initialSetup = async () => {
@@ -67,56 +93,15 @@ const initialSetup = async () => {
   }
 };
 
-// Подключение к MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
-
-// Модели
-const ProductSchema = new mongoose.Schema({
-  id: Number,
-  name: String,
-  year: Number,
-  size: [String],
-  price: Number,
-  images: [String],
-  category: String,
-  condition: Number,
-});
-
-const ReviewSchema = new mongoose.Schema({
-  username: String,
-  text: String,
-  approved: { type: Boolean, default: false },
-});
-
-const SubscriberSchema = new mongoose.Schema({
-  userId: Number,
-});
-
-const FormSchema = new mongoose.Schema({
-  photo: [String],
-  name: String,
-  size: String,
-  condition: String,
-  category: String,
-  userId: Number,
-  approved: { type: Boolean, default: false },
-});
-
-const Product = mongoose.model("Product", ProductSchema);
-const Review = mongoose.model("Review", ReviewSchema);
-const Subscriber = mongoose.model("Subscriber", SubscriberSchema);
-const Form = mongoose.model("Form", FormSchema);
-
 // Маршрут для загрузки фото
-app.post("/api/upload", upload.single("photo"), (req, res) => {
+app.post("/api/upload", upload.single("photo"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "Файл не загружен" });
   }
-  const fileUrl = `/uploads/${req.file.filename}`; // Относительный путь к файлу
-  res.json({ url: fileUrl });
+  const base64String = `data:${
+    req.file.mimetype
+  };base64,${req.file.buffer.toString("base64")}`;
+  res.json({ url: base64String });
 });
 
 // API для товаров
@@ -128,7 +113,10 @@ app.get("/api/products", async (req, res) => {
 app.post("/api/products", upload.array("images", 5), async (req, res) => {
   const { id, name, year, size, price, category, condition } = req.body;
   const images = req.files
-    ? req.files.map((file) => `/uploads/${file.filename}`)
+    ? req.files.map(
+        (file) =>
+          `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+      )
     : ["https://via.placeholder.com/150"];
   const product = new Product({
     id,
@@ -158,7 +146,7 @@ app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
   updatedProduct.condition = condition;
   if (req.files && req.files.length > 0) {
     updatedProduct.images = req.files.map(
-      (file) => `/uploads/${file.filename}`
+      (file) => `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
     );
   }
   await updatedProduct.save();
@@ -170,39 +158,7 @@ app.delete("/api/products/:id", async (req, res) => {
   res.json({ message: "Product deleted" });
 });
 
-// API для отзывов
-app.get("/api/reviews", async (req, res) => {
-  const reviews = await Review.find({ approved: true });
-  res.json(reviews);
-});
-
-app.post("/api/reviews", async (req, res) => {
-  const review = new Review(req.body);
-  await review.save();
-  res.json(review);
-});
-
-app.put("/api/reviews/:id", async (req, res) => {
-  const updatedReview = await Review.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(updatedReview);
-});
-
-app.delete("/api/reviews/:id", async (req, res) => {
-  await Review.findByIdAndDelete(req.params.id);
-  res.json({ message: "Review deleted" });
-});
-
 // API для подписчиков
-app.post("/api/subscribers", async (req, res) => {
-  const subscriber = new Subscriber(req.body);
-  await subscriber.save();
-  res.json(subscriber);
-});
-
 app.get("/api/subscribers", async (req, res) => {
   try {
     const subscribers = await Subscriber.find();
@@ -210,6 +166,22 @@ app.get("/api/subscribers", async (req, res) => {
   } catch (error) {
     console.error("Ошибка при получении подписчиков:", error);
     res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+app.post("/api/subscribers", async (req, res) => {
+  const subscriber = new Subscriber(req.body);
+  await subscriber.save();
+  res.json(subscriber);
+});
+
+app.delete("/api/subscribers/:userId", async (req, res) => {
+  try {
+    await Subscriber.deleteOne({ userId: Number(req.params.userId) });
+    res.json({ message: "Subscriber deleted" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error deleting subscriber" });
   }
 });
 
@@ -227,6 +199,7 @@ app.post("/api/forms", async (req, res) => {
 
 // Маршрут для уведомления подписчиков
 app.post("/notify", async (req, res) => {
+  console.log("Notify route called with product:", req.body);
   const product = req.body;
   await notifySubscribers(product);
   res.json({ message: "Notifications sent" });
@@ -238,12 +211,15 @@ app.get("/", (req, res) => {
 });
 
 // Обработка всех остальных запросов фронтенда
-app.get("/*", (req, res) => {
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ error: "API endpoint not found" });
+  }
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  initialSetup(); // Запускаем инициализацию после старта сервера
+  initialSetup();
 });

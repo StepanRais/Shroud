@@ -161,30 +161,25 @@ bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
 
-  if (state === "waiting_for_review") {
-    const review = {
-      username: ctx.from.username || ctx.from.first_name || "Аноним",
-      text: ctx.message.text,
-      approved: false,
-    };
-    try {
-      await axios.post("https://shroud.onrender.com/api/reviews", review);
-      await ctx.reply("Спасибо за отзыв! Он отправлен на проверку.");
-      await bot.telegram.sendMessage(
-        process.env.ADMIN_CHAT_ID,
-        `Новый отзыв от @${review.username}: ${review.text}\nДля одобрения зайдите в админ-панель.`
-      );
-    } catch (error) {
-      ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
-      console.error(error);
+  if (
+    state === "waiting_for_photo" &&
+    ctx.message.text.toLowerCase() === "готово"
+  ) {
+    if (userStates[userId].photos.length === 0) {
+      ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
+      return;
     }
-    delete userStates[userId];
+    userStates[userId].state = "waiting_for_form_text";
+    ctx.reply(
+      "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
+      { reply_markup: { force_reply: true } }
+    );
   } else if (state === "waiting_for_form_text") {
     const [name, size, condition, category] = ctx.message.text
       .split(",")
       .map((s) => s.trim());
     const form = {
-      photo: [userStates[userId].fileUrl],
+      photo: userStates[userId].photos, // Массив base64-строк
       name,
       size,
       condition,
@@ -199,10 +194,16 @@ bot.on("text", async (ctx) => {
         process.env.ADMIN_CHAT_ID,
         `Новая анкета от @${
           ctx.from.username || ctx.from.first_name || "Аноним"
-        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: https://shroud.onrender.com${
-          userStates[userId].fileUrl
-        }`
+        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${
+          userStates[userId].photos.length
+        } шт.`
       );
+      // Отправляем фото в админ-чат
+      for (const photo of userStates[userId].photos) {
+        await bot.telegram.sendPhoto(process.env.ADMIN_CHAT_ID, {
+          source: Buffer.from(photo.split(",")[1], "base64"),
+        });
+      }
     } catch (error) {
       ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
       console.error(error);
@@ -218,35 +219,19 @@ bot.on("photo", async (ctx) => {
 
   if (state === "waiting_for_photo") {
     const photo = ctx.message.photo.pop().file_id;
-    let fileUrl;
     try {
-      // Получаем ссылку на файл
-      fileUrl = await bot.telegram.getFileLink(photo);
-
-      // Загружаем фото как поток
-      const response = await axios.get(fileUrl, { responseType: "stream" });
-
-      // Создаём FormData с использованием form-data
-      const formData = new FormData();
-      formData.append("photo", response.data, "photo.jpg");
-
-      // Отправляем на сервер
-      const uploadResponse = await axios.post(
-        "https://shroud.onrender.com/api/upload",
-        formData,
-        { headers: formData.getHeaders() } // Используем заголовки от form-data
-      );
-      fileUrl = uploadResponse.data.url;
-
-      userStates[userId] = { state: "waiting_for_form_text", fileUrl };
-      ctx.reply(
-        "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
-        { reply_markup: { force_reply: true } }
-      );
+      const fileUrl = await bot.telegram.getFileLink(photo);
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+      const base64String = `data:image/jpeg;base64,${Buffer.from(
+        response.data
+      ).toString("base64")}`;
+      userStates[userId].photos.push(base64String);
+      ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
     } catch (error) {
-      console.error("Ошибка при загрузке фото на сервер:", error);
+      console.error("Ошибка при загрузке фото:", error);
       ctx.reply("Ошибка при загрузке фото. Попробуйте снова.");
-      delete userStates[userId];
     }
   }
 });
