@@ -203,6 +203,16 @@ app.post("/api/subscribers", async (req, res) => {
   res.json(subscriber);
 });
 
+app.get("/api/subscribers", async (req, res) => {
+  try {
+    const subscribers = await Subscriber.find();
+    res.json(subscribers);
+  } catch (error) {
+    console.error("Ошибка при получении подписчиков:", error);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 // API для анкет
 app.get("/api/forms", async (req, res) => {
   const forms = await Form.find();
