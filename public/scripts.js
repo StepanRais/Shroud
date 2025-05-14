@@ -22,9 +22,10 @@ let currentFilters = {
 // Список ID администраторов (замени на реальные ID)
 const adminUserIds = [570191364];
 
-// Переменные для хранения данных (больше не используем localStorage)
+// Переменные для хранения данных
 let products = [];
 let reviews = [];
+let currentImageIndex = 0;
 
 // Проверка, является ли пользователь администратором
 function checkIfAdminUser() {
@@ -48,20 +49,34 @@ function renderBottomNav() {
 // Загрузка данных с сервера при старте
 async function loadData() {
   try {
+    console.log(
+      "Loading products from https://shroud.onrender.com/api/products"
+    );
     const productsResponse = await axios.get(
       "https://shroud.onrender.com/api/products"
     );
+    console.log("Products loaded:", productsResponse.data);
     products = productsResponse.data;
 
+    console.log("Loading reviews from https://shroud.onrender.com/api/reviews");
     const reviewsResponse = await axios.get(
       "https://shroud.onrender.com/api/reviews"
     );
+    console.log("Reviews loaded:", reviewsResponse.data);
     reviews = reviewsResponse.data;
 
-    renderCatalog(); // Обновляем каталог после загрузки данных
-    renderReviews(); // Обновляем отзывы
+    renderCatalog();
+    renderReviews();
   } catch (error) {
-    console.error("Ошибка при загрузке данных:", error);
+    console.error("Error loading data:", error.message);
+    if (error.response) {
+      console.error("Response status:", error.response.status);
+      console.error("Response data:", error.response.data);
+    } else if (error.request) {
+      console.error(
+        "No response received. Server may not be running or URL is incorrect."
+      );
+    }
     alert("Не удалось загрузить данные. Проверьте подключение к серверу.");
   }
 }
@@ -80,7 +95,7 @@ async function checkAdminPassword() {
     document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent3").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
-    await loadData(); // Загружаем данные для админ-панели
+    await loadData();
     renderAdmin();
     alert("Доступ открыт!");
   } else {
@@ -96,8 +111,7 @@ function renderCatalog(filteredProducts = products) {
   filteredProducts.forEach((product) => {
     const productDiv = document.createElement("div");
     productDiv.className = "product";
-    // Изображение либо base64, либо внешний URL
-    const imageUrl = product.images[0] || "https://via.placeholder.com/150"; // Запасной вариант, если images пустой
+    const imageUrl = product.images[0] || "https://via.placeholder.com/150";
     productDiv.innerHTML = `
       <div class="product-image-container">
         <img src="${imageUrl}" alt="${product.name}">
@@ -376,10 +390,11 @@ async function addProduct() {
       const response = await axios.post(
         "https://shroud.onrender.com/api/products",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
       products.push(response.data);
-      // Уведомляем подписчиков о новом товаре
       await axios.post("https://shroud.onrender.com/notify", response.data);
       alert("Товар добавлен!");
       document.getElementById("newProductName").value = "";
@@ -391,7 +406,7 @@ async function addProduct() {
       renderAdmin();
       renderCatalog(filterProducts());
     } catch (error) {
-      console.error(error);
+      console.error("Error adding product:", error.message);
       alert("Ошибка при добавлении товара.");
     }
   } else {
@@ -452,7 +467,9 @@ async function updateProduct() {
       const response = await axios.put(
         `https://shroud.onrender.com/api/products/${product._id}`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
       products[index] = response.data;
       alert("Товар обновлён!");
@@ -461,7 +478,7 @@ async function updateProduct() {
       renderAdmin();
       renderCatalog(filterProducts());
     } catch (error) {
-      console.error(error);
+      console.error("Error updating product:", error.message);
       alert("Ошибка при обновлении товара.");
     }
   } else {
@@ -487,7 +504,7 @@ async function deleteProduct(index) {
     renderAdmin();
     renderCatalog(filterProducts());
   } catch (error) {
-    console.error(error);
+    console.error("Error deleting product:", error.message);
     alert("Ошибка при удалении товара.");
   }
 }
@@ -513,7 +530,7 @@ async function addReview() {
       renderAdmin();
       renderReviews();
     } catch (error) {
-      console.error(error);
+      console.error("Error adding review:", error.message);
       alert("Ошибка при добавлении отзыва.");
     }
   } else {
@@ -552,7 +569,7 @@ async function updateReview() {
       renderAdmin();
       renderReviews();
     } catch (error) {
-      console.error(error);
+      console.error("Error updating review:", error.message);
       alert("Ошибка при обновлении отзыва.");
     }
   } else {
@@ -576,7 +593,7 @@ async function deleteReview(index) {
     renderAdmin();
     renderReviews();
   } catch (error) {
-    console.error(error);
+    console.error("Error deleting review:", error.message);
     alert("Ошибка при удалении отзыва.");
   }
 }
@@ -708,10 +725,6 @@ document.getElementById("searchInput").addEventListener("input", () => {
   renderCatalog(filterProducts());
 });
 
-function showReviews() {
-  showScreen("reviewsScreen");
-}
-
 tg.MainButton.onClick(() => {
   showScreen("cartScreen");
 });
@@ -726,10 +739,8 @@ function submitDelivery() {
     return;
   }
 
-  // Сохраняем данные доставки
   deliveryData = { name, address, phone };
 
-  // Рассчитываем сумму
   let total = 0;
   let items = [];
   if (pendingPurchase.type === "single") {
@@ -750,17 +761,14 @@ function submitDelivery() {
     }));
   }
 
-  // Формируем данные для передачи в бота
   const orderData = JSON.stringify({
     action: "requestPayment",
     total,
     delivery: deliveryData,
     items,
   });
-  // Отправляем запрос боту для показа инструкции оплаты
   tg.sendData(orderData);
 
-  // Покажем экран ожидания или оставим текущий
   showScreen("catalogScreen");
 }
 

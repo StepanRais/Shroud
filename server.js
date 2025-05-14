@@ -5,16 +5,16 @@ const dotenv = require("dotenv");
 const path = require("path");
 const { notifySubscribers } = require("./bot/index.js");
 const multer = require("multer");
-const fs = require("fs");
+const sharp = require("sharp");
 
 // Настройка multer для обработки файлов в памяти
-const storage = multer.memoryStorage(); // Храним файлы в памяти, а не на диске
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "*" })); // Разрешить все источники для Telegram Web App
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, "public")));
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
+  .catch((err) => console.error("MongoDB connection error:", err.message));
 
 // Модели
 const ProductSchema = new mongoose.Schema({
@@ -32,7 +32,7 @@ const ProductSchema = new mongoose.Schema({
   year: Number,
   size: [String],
   price: Number,
-  images: [String], // Храним base64-строки
+  images: [String],
   category: String,
   condition: Number,
 });
@@ -48,7 +48,7 @@ const SubscriberSchema = new mongoose.Schema({
 });
 
 const FormSchema = new mongoose.Schema({
-  photo: [String], // Храним base64-строки
+  photo: [String],
   name: String,
   size: String,
   condition: String,
@@ -64,60 +64,90 @@ const Form = mongoose.model("Form", FormSchema);
 
 // Инициализация тестовых данных
 const initialSetup = async () => {
-  const count = await Product.countDocuments();
-  if (count === 0) {
-    const products = [
-      {
-        id: 1,
-        name: "Bal Sagoth",
-        year: 1999,
-        size: ["XL"],
-        price: 6000,
-        images: ["https://via.placeholder.com/150"],
-        category: "Лонгслив",
-        condition: 5,
-      },
-      {
-        id: 2,
-        name: "Opeth",
-        year: 2002,
-        size: ["L"],
-        price: 4500,
-        images: ["https://via.placeholder.com/150"],
-        category: "Футболка",
-        condition: 5,
-      },
-    ];
-    await Product.insertMany(products);
-    console.log("Тестовые товары добавлены в базу.");
+  try {
+    const count = await Product.countDocuments();
+    if (count === 0) {
+      const products = [
+        {
+          id: 1,
+          name: "Bal Sagoth",
+          year: 1999,
+          size: ["XL"],
+          price: 6000,
+          images: ["https://via.placeholder.com/150"],
+          category: "Лонгслив",
+          condition: 5,
+        },
+        {
+          id: 2,
+          name: "Opeth",
+          year: 2002,
+          size: ["L"],
+          price: 4500,
+          images: ["https://via.placeholder.com/150"],
+          category: "Футболка",
+          condition: 5,
+        },
+      ];
+      await Product.insertMany(products);
+      console.log("Test products added to database.");
+    }
+  } catch (error) {
+    console.error("Error initializing test data:", error.message);
   }
 };
 
 // Маршрут для загрузки фото
 app.post("/api/upload", upload.single("photo"), async (req, res) => {
+  console.log("POST /api/upload called");
   if (!req.file) {
-    return res.status(400).json({ error: "Файл не загружен" });
+    console.error("No file uploaded");
+    return res.status(400).json({ error: "File not uploaded" });
   }
-  const base64String = `data:${
-    req.file.mimetype
-  };base64,${req.file.buffer.toString("base64")}`;
-  res.json({ url: base64String });
+  try {
+    const compressedImage = await sharp(req.file.buffer)
+      .resize({ width: 800 })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    const base64String = `data:${
+      req.file.mimetype
+    };base64,${compressedImage.toString("base64")}`;
+    res.json({ url: base64String });
+  } catch (error) {
+    console.error("Error processing image:", error.message);
+    res.status(500).json({ error: "Error processing image" });
+  }
 });
 
 // API для товаров
 app.get("/api/products", async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+  console.log("GET /api/products called");
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/api/products", upload.array("images", 5), async (req, res) => {
+  console.log("POST /api/products called with body:", req.body);
   const { id, name, year, size, price, category, condition } = req.body;
-  const images = req.files
-    ? req.files.map(
-        (file) =>
-          `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
-      )
-    : ["https://via.placeholder.com/150"];
+  let images = [];
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const compressedImage = await sharp(file.buffer)
+        .resize({ width: 800 })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      images.push(
+        `data:${file.mimetype};base64,${compressedImage.toString("base64")}`
+      );
+    }
+  } else {
+    images = ["https://via.placeholder.com/150"];
+  }
   const product = new Product({
     id,
     name,
@@ -128,15 +158,23 @@ app.post("/api/products", upload.array("images", 5), async (req, res) => {
     category,
     condition,
   });
-  await product.save();
-  res.json(product);
+  try {
+    await product.save();
+    console.log("Product saved:", product);
+    res.json(product);
+  } catch (error) {
+    console.error("Error saving product:", error.message);
+    res.status(500).json({ error: "Error saving product" });
+  }
 });
 
 app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
+  console.log("PUT /api/products/:id called with id:", req.params.id);
   const { name, year, size, price, category, condition } = req.body;
   const updatedProduct = await Product.findById(req.params.id);
   if (!updatedProduct) {
-    return res.status(404).json({ error: "Товар не найден" });
+    console.error("Product not found");
+    return res.status(404).json({ error: "Product not found" });
   }
   updatedProduct.name = name;
   updatedProduct.year = year;
@@ -145,74 +183,154 @@ app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
   updatedProduct.category = category;
   updatedProduct.condition = condition;
   if (req.files && req.files.length > 0) {
-    updatedProduct.images = req.files.map(
-      (file) => `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
-    );
+    const newImages = [];
+    for (const file of req.files) {
+      const compressedImage = await sharp(file.buffer)
+        .resize({ width: 800 })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      newImages.push(
+        `data:${file.mimetype};base64,${compressedImage.toString("base64")}`
+      );
+    }
+    updatedProduct.images = newImages;
   }
-  await updatedProduct.save();
-  res.json(updatedProduct);
+  try {
+    await updatedProduct.save();
+    console.log("Product updated:", updatedProduct);
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Error updating product:", error.message);
+    res.status(500).json({ error: "Error updating product" });
+  }
 });
 
 app.delete("/api/products/:id", async (req, res) => {
-  await Product.findByIdAndDelete(req.params.id);
-  res.json({ message: "Product deleted" });
+  console.log("DELETE /api/products/:id called with id:", req.params.id);
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    console.log("Product deleted");
+    res.json({ message: "Product deleted" });
+  } catch (error) {
+    console.error("Error deleting product:", error.message);
+    res.status(500).json({ error: "Error deleting product" });
+  }
 });
 
 // API для подписчиков
 app.get("/api/subscribers", async (req, res) => {
+  console.log("GET /api/subscribers called");
   try {
     const subscribers = await Subscriber.find();
     res.json(subscribers);
   } catch (error) {
-    console.error("Ошибка при получении подписчиков:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    console.error("Error fetching subscribers:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 app.post("/api/subscribers", async (req, res) => {
-  const subscriber = new Subscriber(req.body);
-  await subscriber.save();
-  res.json(subscriber);
+  console.log("POST /api/subscribers called with body:", req.body);
+  try {
+    const subscriber = new Subscriber(req.body);
+    await subscriber.save();
+    console.log("Subscriber saved:", subscriber);
+    res.json(subscriber);
+  } catch (error) {
+    console.error("Error saving subscriber:", error.message);
+    res.status(500).json({ error: "Error saving subscriber" });
+  }
 });
 
 app.delete("/api/subscribers/:userId", async (req, res) => {
+  console.log(
+    "DELETE /api/subscribers/:userId called with userId:",
+    req.params.userId
+  );
   try {
     await Subscriber.deleteOne({ userId: Number(req.params.userId) });
+    console.log("Subscriber deleted");
     res.json({ message: "Subscriber deleted" });
   } catch (error) {
-    console.error(error);
+    console.error("Error deleting subscriber:", error.message);
     res.status(500).json({ error: "Error deleting subscriber" });
   }
 });
 
 // API для анкет
 app.get("/api/forms", async (req, res) => {
-  const forms = await Form.find();
-  res.json(forms);
+  console.log("GET /api/forms called");
+  try {
+    const forms = await Form.find();
+    res.json(forms);
+  } catch (error) {
+    console.error("Error fetching forms:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/api/forms", async (req, res) => {
-  const form = new Form(req.body);
-  await form.save();
-  res.json(form);
+  console.log("POST /api/forms called with body:", req.body);
+  try {
+    const form = new Form(req.body);
+    await form.save();
+    console.log("Form saved:", form);
+    res.json(form);
+  } catch (error) {
+    console.error("Error saving form:", error.message);
+    res.status(500).json({ error: "Error saving form" });
+  }
+});
+
+// API для отзывов
+app.get("/api/reviews", async (req, res) => {
+  console.log("GET /api/reviews called");
+  try {
+    const reviews = await Review.find();
+    res.json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/reviews", async (req, res) => {
+  console.log("POST /api/reviews called with body:", req.body);
+  try {
+    const review = new Review(req.body);
+    await review.save();
+    console.log("Review saved:", review);
+    res.json(review);
+  } catch (error) {
+    console.error("Error saving review:", error.message);
+    res.status(500).json({ error: "Error saving review" });
+  }
 });
 
 // Маршрут для уведомления подписчиков
 app.post("/notify", async (req, res) => {
-  console.log("Notify route called with product:", req.body);
-  const product = req.body;
-  await notifySubscribers(product);
-  res.json({ message: "Notifications sent" });
+  console.log("POST /notify called with product:", req.body);
+  try {
+    await notifySubscribers(req.body);
+    console.log("Notifications sent");
+    res.json({ message: "Notifications sent" });
+  } catch (error) {
+    console.error("Error in /notify:", error.message);
+    res.status(500).json({ error: "Error sending notifications" });
+  }
 });
 
 // Маршрут для фронтенда
 app.get("/", (req, res) => {
+  console.log("GET / called");
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Обработка всех остальных запросов фронтенда
 app.get("*", (req, res) => {
+  console.log("GET * called for path:", req.path);
   if (req.path.startsWith("/api")) {
+    console.error("API endpoint not found:", req.path);
     return res.status(404).json({ error: "API endpoint not found" });
   }
   res.sendFile(path.join(__dirname, "public", "index.html"));
