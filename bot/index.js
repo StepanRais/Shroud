@@ -157,7 +157,8 @@ bot.action("payment_confirmed", async (ctx) => {
   }
   try {
     console.log("Payment confirmed by user:", userId);
-    let message = `Новый заказ:\nФИО: ${orderData.delivery.name}\nАдрес: ${orderData.delivery.address}\nТелефон: ${orderData.delivery.phone}\n\nТовары:\n`;
+    let message = `Новый заказ:\nПокупатель: @${ctx.from.username || "Аноним"} (ID: ${userId})\n`;
+    message += `ФИО: ${orderData.delivery.name}\nАдрес: ${orderData.delivery.address}\nТелефон: ${orderData.delivery.phone}\n\nТовары:\n`;
     orderData.items.forEach((item, index) => {
       message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${item.price}₽\n`;
     });
@@ -206,11 +207,18 @@ bot.on("message", async (ctx) => {
       if (data.action === "requestPayment") {
         const { total, delivery, items } = data;
         userStates[ctx.from.id] = { state: "waiting_for_payment", orderData: data };
-        let message = `Пожалуйста, переведите ${total}₽ на карту: 1234 5678 9012 3456\nПосле оплаты нажмите "Я оплатил".\n\nДетали заказа:\n`;
+        let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
+        message += `Имя получателя: Иван Иванов\n`;
+        message += `Банк: Сбербанк\n`;
+        message += `После оплаты нажмите "Я оплатил".\n\n`;
+        message += `Детали заказа:\n`;
         items.forEach((item, index) => {
           message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${item.price}₽\n`;
         });
-        message += `\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\nИтого: ${total}₽`;
+        message += `\nФИО: ${delivery.name}\n`;
+        message += `Адрес: ${delivery.address}\n`;
+        message += `Телефон: ${delivery.phone}\n`;
+        message += `Итого: ${total}₽`;
         await ctx.reply(message, {
           reply_markup: {
             inline_keyboard: [
@@ -229,8 +237,11 @@ bot.on("message", async (ctx) => {
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
+  const text = ctx.message.text.trim().toLowerCase();
 
-  if (state === "waiting_for_review") {
+  console.log(`Text received from user ${userId}: "${text}", state: ${state}`);
+
+  if (state === "waiting_for_review" && text !== "готово") {
     try {
       console.log("Review received from user:", userId);
       const review = {
@@ -258,7 +269,7 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
     }
     delete userStates[userId];
-  } else if (state === "waiting_for_photo" && ctx.message.text.trim().toLowerCase() === "готово") {
+  } else if (state === "waiting_for_photo" && text === "готово") {
     console.log("Received 'Готово' from user:", userId);
     if (userStates[userId].photos.length === 0) {
       ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
