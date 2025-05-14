@@ -10,9 +10,7 @@ const userStates = {};
 async function notifySubscribers(product) {
   try {
     console.log("Notifying subscribers about product:", product);
-    const response = await axios.get(
-      "https://shroud.onrender.com/api/subscribers"
-    );
+    const response = await axios.get("https://shroud.onrender.com/api/subscribers");
     const subscribers = response.data;
     console.log("Found subscribers:", subscribers);
     if (subscribers.length === 0) {
@@ -84,9 +82,7 @@ bot.action("leave_review", (ctx) => {
 bot.action("subscribe", async (ctx) => {
   console.log("Subscription request from user:", ctx.from.id);
   try {
-    const response = await axios.get(
-      "https://shroud.onrender.com/api/subscribers"
-    );
+    const response = await axios.get("https://shroud.onrender.com/api/subscribers");
     const subscribers = response.data;
     if (subscribers.some((sub) => sub.userId === ctx.from.id)) {
       ctx.reply("Вы уже подписаны на рассылку! 📬");
@@ -105,9 +101,7 @@ bot.action("subscribe", async (ctx) => {
 bot.action("unsubscribe", async (ctx) => {
   console.log("Unsubscription request from user:", ctx.from.id);
   try {
-    await axios.delete(
-      `https://shroud.onrender.com/api/subscribers/${ctx.from.id}`
-    );
+    await axios.delete(`https://shroud.onrender.com/api/subscribers/${ctx.from.id}`);
     ctx.reply("Вы отписались от рассылки! 📴");
   } catch (error) {
     console.error("Error unsubscribing:", error.message);
@@ -132,9 +126,7 @@ bot.action(/approve_review_(.+)/, async (ctx) => {
   const reviewId = ctx.match[1];
   try {
     console.log("Approving review:", reviewId);
-    await axios.put(
-      `https://shroud.onrender.com/api/reviews/${reviewId}/approve`
-    );
+    await axios.put(`https://shroud.onrender.com/api/reviews/${reviewId}/approve`);
     ctx.reply("Отзыв одобрен!");
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
   } catch (error) {
@@ -163,17 +155,14 @@ bot.on("photo", async (ctx) => {
   if (state === "waiting_for_photo") {
     try {
       console.log("Photos received from user:", userId);
-      const photos = ctx.message.photo;
-      for (const photo of photos) {
-        const fileUrl = await bot.telegram.getFileLink(photo.file_id);
-        const response = await axios.get(fileUrl, {
-          responseType: "arraybuffer",
-        });
-        const base64String = `data:image/jpeg;base64,${Buffer.from(
-          response.data
-        ).toString("base64")}`;
-        userStates[userId].photos.push(base64String);
-      }
+      // Брать только фото максимального размера (последний элемент)
+      const photo = ctx.message.photo[ctx.message.photo.length - 1];
+      const fileUrl = await bot.telegram.getFileLink(photo.file_id);
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+      const base64String = `data:image/jpeg;base64,${Buffer.from(response.data).toString("base64")}`;
+      userStates[userId].photos.push(base64String);
       ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
     } catch (error) {
       console.error("Error processing photo:", error.message);
@@ -182,25 +171,25 @@ bot.on("photo", async (ctx) => {
   }
 });
 
-bot.on("web_app_data", async (ctx) => {
-  try {
-    console.log("Web app data received from user:", ctx.from.id);
-    const data = JSON.parse(ctx.webAppData.data);
-    if (data.action === "requestPayment") {
-      const { total, delivery, items } = data;
-      let message = `Новый заказ:\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\n\nТовары:\n`;
-      items.forEach((item, index) => {
-        message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
-          item.price
-        }₽\n`;
-      });
-      message += `\nИтого: ${total}₽`;
-      await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
-      ctx.reply("Ваш заказ отправлен! Мы свяжемся с вами для подтверждения.");
+bot.on("message", async (ctx) => {
+  if (ctx.message.web_app_data) {
+    try {
+      console.log("Web app data received from user:", ctx.from.id);
+      const data = JSON.parse(ctx.message.web_app_data.data);
+      if (data.action === "requestPayment") {
+        const { total, delivery, items } = data;
+        let message = `Новый заказ:\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\n\nТовары:\n`;
+        items.forEach((item, index) => {
+          message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${item.price}₽\n`;
+        });
+        message += `\nИтого: ${total}₽`;
+        await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
+        ctx.reply("Ваш заказ отправлен! Мы свяжемся с вами для подтверждения.");
+      }
+    } catch (error) {
+      console.error("Error processing web app data:", error.message);
+      ctx.reply("Ошибка при обработке заказа. Попробуйте позже.");
     }
-  } catch (error) {
-    console.error("Error processing web app data:", error.message);
-    ctx.reply("Ошибка при обработке заказа. Попробуйте позже.");
   }
 });
 
@@ -215,27 +204,16 @@ bot.on("text", async (ctx) => {
         username: ctx.from.username || ctx.from.first_name || "Аноним",
         text: ctx.message.text,
       };
-      const response = await axios.post(
-        "https://shroud.onrender.com/api/reviews",
-        review
-      );
+      const response = await axios.post("https://shroud.onrender.com/api/reviews", review);
       await bot.telegram.sendMessage(
         process.env.ADMIN_CHAT_ID,
-        `Новый отзыв от @${
-          ctx.from.username || ctx.from.first_name || "Аноним"
-        }:\n${ctx.message.text}`,
+        `Новый отзыв от @${ctx.from.username || ctx.from.first_name || "Аноним"}:\n${ctx.message.text}`,
         {
           reply_markup: {
             inline_keyboard: [
               [
-                {
-                  text: "Одобрить",
-                  callback_data: `approve_review_${response.data._id}`,
-                },
-                {
-                  text: "Отклонить",
-                  callback_data: `reject_review_${response.data._id}`,
-                },
+                { text: "Одобрить", callback_data: `approve_review_${response.data._id}` },
+                { text: "Отклонить", callback_data: `reject_review_${response.data._id}` },
               ],
             ],
           },
@@ -247,10 +225,7 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
     }
     delete userStates[userId];
-  } else if (
-    state === "waiting_for_photo" &&
-    ctx.message.text.toLowerCase() === "готово"
-  ) {
+  } else if (state === "waiting_for_photo" && ctx.message.text.toLowerCase() === "готово") {
     if (userStates[userId].photos.length === 0) {
       ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
       return;
@@ -276,24 +251,17 @@ bot.on("text", async (ctx) => {
     try {
       console.log("Form submitted by user:", userId);
       await axios.post("https://shroud.onrender.com/api/forms", form);
-      const mediaGroup = userStates[userId].photos.map((photo) => ({
-        type: "photo",
-        media: { source: Buffer.from(photo.split(",")[1], "base64") },
-      }));
-      if (mediaGroup.length > 0) {
-        await bot.telegram.sendMediaGroup(
-          process.env.ADMIN_CHAT_ID,
-          mediaGroup
-        );
+      const caption = `Новая анкета от @${ctx.from.username || ctx.from.first_name || "Аноним"}:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${userStates[userId].photos.length} шт.`;
+      if (userStates[userId].photos.length > 0) {
+        const mediaGroup = userStates[userId].photos.map((photo, index) => ({
+          type: "photo",
+          media: { source: Buffer.from(photo.split(",")[1], "base64") },
+          caption: index === 0 ? caption : undefined, // Подпись только для первого фото
+        }));
+        await bot.telegram.sendMediaGroup(process.env.ADMIN_CHAT_ID, mediaGroup);
+      } else {
+        await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, caption);
       }
-      await bot.telegram.sendMessage(
-        process.env.ADMIN_CHAT_ID,
-        `Новая анкета от @${
-          ctx.from.username || ctx.from.first_name || "Аноним"
-        }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${
-          userStates[userId].photos.length
-        } шт.`
-      );
       ctx.reply("Анкета принята на рассмотрение!");
     } catch (error) {
       console.error("Error submitting form:", error.message);
