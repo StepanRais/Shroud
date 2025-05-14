@@ -235,10 +235,7 @@ bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
 
-  console.log(`Text received from user ${userId}: "${ctx.message.text}", state: ${state}`);
-
   if (state === "waiting_for_photo" && ctx.message.text.toLowerCase() === "готово") {
-    console.log("Received 'Готово' from user:", userId);
     if (userStates[userId].photos.length === 0) {
       ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
       return;
