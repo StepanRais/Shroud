@@ -96,9 +96,11 @@ function renderCatalog(filteredProducts = products) {
   filteredProducts.forEach((product) => {
     const productDiv = document.createElement("div");
     productDiv.className = "product";
+    // Изображение либо base64, либо внешний URL
+    const imageUrl = product.images[0] || "https://via.placeholder.com/150"; // Запасной вариант, если images пустой
     productDiv.innerHTML = `
       <div class="product-image-container">
-        <img src="${product.images[0]}" alt="${product.name}">
+        <img src="${imageUrl}" alt="${product.name}">
       </div>
       <h3>${product.name}</h3>
       <p>${product.year} ${
@@ -228,7 +230,6 @@ function resetFilters() {
 }
 
 // Функция для отображения страницы товара
-let currentImageIndex = 0;
 function showProductPage(productId) {
   const product = products.find((p) => p.id === productId);
   currentImageIndex = 0;
@@ -240,12 +241,13 @@ function showProductPage(productId) {
           .join("")}</select>`
       : "<p>Без размера</p>";
 
+  const imageUrl =
+    product.images[currentImageIndex] || "https://via.placeholder.com/150";
+
   const productPageDiv = document.getElementById("productPage");
   productPageDiv.innerHTML = `
     <div class="product-image">
-      <img src="${product.images[currentImageIndex]}" alt="${
-    product.name
-  }" id="productImage">
+      <img src="${imageUrl}" alt="${product.name}" id="productImage">
       <button class="arrow left" onclick="changeImage(-1)">⬅</button>
       <button class="arrow right" onclick="changeImage(1)">➡</button>
     </div>
@@ -651,8 +653,9 @@ function changeImage(direction) {
   currentImageIndex =
     (currentImageIndex + direction + product.images.length) %
     product.images.length;
-  document.getElementById("productImage").src =
-    product.images[currentImageIndex];
+  const imageUrl =
+    product.images[currentImageIndex] || "https://via.placeholder.com/150";
+  document.getElementById("productImage").src = imageUrl;
 }
 
 // Функция для получения текущего ID товара
