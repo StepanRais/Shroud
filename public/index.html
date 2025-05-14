@@ -1,68 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
   <head>
-    <title>Shroud</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Магазин</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div class="container">
-      <!-- Экран каталога -->
-      <div class="screen active" id="catalogScreen">
+      <!-- Контейнер для уведомлений -->
+      <div id="notificationContainer"></div>
+
+      <!-- Каталог -->
+      <div id="catalogScreen" class="screen active">
         <div class="search-bar">
-          <input type="text" placeholder="Поиск..." id="searchInput" />
           <span class="search-icon">🔍</span>
-          <button class="filter-btn" onclick="showScreen('filtersScreen')">
+          <input type="text" id="searchInput" placeholder="Поиск товаров..." />
+          <button class="filter-btn" onclick="showScreen('filterScreen')">
             Фильтры ⚙️
           </button>
         </div>
-        <div class="catalog" id="catalog"></div>
+        <div id="catalog" class="catalog"></div>
       </div>
 
-      <!-- Экран страницы товара -->
-      <div class="screen" id="productScreen">
+      <!-- Страница товара -->
+      <div id="productScreen" class="screen">
         <button class="close-btn" onclick="showScreen('catalogScreen')">
           ✖
         </button>
-        <div class="product-page" id="productPage"></div>
+        <div id="productPage" class="product-page"></div>
       </div>
 
-      <!-- Экран корзины -->
-      <div class="screen" id="cartScreen">
+      <!-- Корзина -->
+      <div id="cartScreen" class="screen">
         <h2>Корзина</h2>
-        <div class="cart" id="cart"></div>
+        <div id="cart" class="cart"></div>
         <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
       </div>
 
-      <!-- Экран доставки -->
-      <div class="screen" id="deliveryScreen">
+      <!-- Доставка -->
+      <div id="deliveryScreen" class="screen">
         <h2>Оформление доставки</h2>
         <p>Доставка осуществляется только через "Почта России".</p>
         <form id="deliveryForm">
           <label for="deliveryName">Ваше имя:</label>
-          <input
-            type="text"
-            id="deliveryName"
-            placeholder="Введите ваше имя"
-            required
-          />
-
+          <input type="text" id="deliveryName" required />
           <label for="deliveryAddress">Адрес доставки:</label>
-          <textarea
-            id="deliveryAddress"
-            placeholder="Введите адрес доставки"
-            required
-          ></textarea>
-
+          <textarea id="deliveryAddress" required></textarea>
           <label for="deliveryPhone">Телефон:</label>
-          <input
-            type="tel"
-            id="deliveryPhone"
-            placeholder="+79991234567"
-            required
-          />
-
+          <input type="tel" id="deliveryPhone" required />
           <button type="button" onclick="submitDelivery()">Далее</button>
           <button type="button" onclick="showScreen('cartScreen')">
             Назад
@@ -70,14 +61,14 @@
         </form>
       </div>
 
-      <!-- Экран отзывов -->
-      <div class="screen" id="reviewsScreen">
+      <!-- Отзывы -->
+      <div id="reviewsScreen" class="screen">
         <h2>Отзывы</h2>
-        <div class="reviews" id="reviews"></div>
+        <div id="reviews" class="reviews"></div>
       </div>
 
-      <!-- Экран фильтров -->
-      <div class="screen" id="filtersScreen">
+      <!-- Фильтры -->
+      <div id="filterScreen" class="screen">
         <h2>Фильтры</h2>
         <div class="filters">
           <div class="filter-group">
@@ -136,22 +127,21 @@
         </div>
       </div>
 
-      <!-- Экран администратора -->
-      <div class="screen" id="adminScreen">
-        <h2>Администратор</h2>
+      <!-- Админ-панель -->
+      <div id="adminScreen" class="screen">
         <div class="admin-section">
           <h3>Введите пароль</h3>
-          <input type="password" id="adminPassword" placeholder="Пароль" />
+          <input type="password" id="adminPassword" />
           <button onclick="checkAdminPassword()">Войти</button>
         </div>
-        <div class="admin-section" id="adminContent" style="display: none">
+        <div id="adminContent" class="admin-section" style="display: none">
           <h3>Добавить товар</h3>
           <input type="text" id="newProductName" placeholder="Название" />
           <input type="text" id="newProductCategory" placeholder="Категория" />
           <input
             type="text"
             id="newProductSizes"
-            placeholder="Размеры (через запятую, например: M,L)"
+            placeholder="Размеры (через запятую)"
           />
           <input type="number" id="newProductPrice" placeholder="Цена" />
           <input
@@ -159,10 +149,10 @@
             id="newProductCondition"
             placeholder="Состояние (1-5)"
           />
-          <input type="file" id="newProductImage" accept="image/*" multiple />
+          <input type="file" id="newProductImage" multiple accept="image/*" />
           <button onclick="addProduct()">Добавить товар</button>
         </div>
-        <div class="admin-section" id="editProductForm" style="display: none">
+        <div id="editProductForm" class="admin-section" style="display: none">
           <h3>Редактировать товар</h3>
           <input type="hidden" id="editProductIndex" />
           <input type="text" id="editProductName" placeholder="Название" />
@@ -170,7 +160,7 @@
           <input
             type="text"
             id="editProductSizes"
-            placeholder="Размеры (через запятую, например: M,L)"
+            placeholder="Размеры (через запятую)"
           />
           <input type="number" id="editProductPrice" placeholder="Цена" />
           <input
@@ -178,48 +168,42 @@
             id="editProductCondition"
             placeholder="Состояние (1-5)"
           />
-          <input type="file" id="editProductImage" accept="image/*" multiple />
+          <input type="file" id="editProductImage" multiple accept="image/*" />
           <button onclick="updateProduct()">Сохранить изменения</button>
           <button onclick="cancelEditProduct()">Отмена</button>
         </div>
-        <div class="admin-section" id="adminContent2" style="display: none">
+        <div id="adminContent2" class="admin-section" style="display: none">
           <h3>Добавить отзыв</h3>
-          <input
-            type="text"
-            id="newReviewUsername"
-            placeholder="Имя пользователя"
-          />
+          <input type="text" id="newReviewUsername" placeholder="Имя" />
           <input type="text" id="newReviewText" placeholder="Текст отзыва" />
           <button onclick="addReview()">Добавить отзыв</button>
         </div>
-        <div class="admin-section" id="editReviewForm" style="display: none">
+        <div id="editReviewForm" class="admin-section" style="display: none">
           <h3>Редактировать отзыв</h3>
           <input type="hidden" id="editReviewIndex" />
-          <input
-            type="text"
-            id="editReviewUsername"
-            placeholder="Имя пользователя"
-          />
+          <input type="text" id="editReviewUsername" placeholder="Имя" />
           <input type="text" id="editReviewText" placeholder="Текст отзыва" />
           <button onclick="updateReview()">Сохранить изменения</button>
           <button onclick="cancelEditReview()">Отмена</button>
         </div>
-        <div class="admin-section" id="adminContent3" style="display: none">
+        <div id="adminContent3" class="admin-section" style="display: none">
           <h3>Товары</h3>
           <div id="productList"></div>
         </div>
-        <div class="admin-section" id="adminContent4" style="display: none">
+        <div id="adminContent4" class="admin-section" style="display: none">
           <h3>Отзывы</h3>
           <div id="reviewList"></div>
         </div>
       </div>
     </div>
 
+    <!-- Нижняя панель -->
     <div class="bottom-nav" id="bottomNav">
       <button onclick="showScreen('catalogScreen')">📋</button>
-      <button onclick="showScreen('cartScreen')">🛒</button>
+      <button onclick="showScreen('cartScreen')" id="cartButton">
+        🛒 <span id="cartCount" style="display: none">0</span>
+      </button>
       <button onclick="showScreen('reviewsScreen')">💬</button>
-      <!-- Кнопка администратора будет добавлена динамически в scripts.js -->
     </div>
 
     <script src="scripts.js"></script>
