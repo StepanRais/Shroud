@@ -148,6 +148,30 @@ bot.action(/reject_review_(.+)/, async (ctx) => {
   }
 });
 
+bot.action("payment_confirmed", async (ctx) => {
+  const userId = ctx.from.id;
+  const orderData = userStates[userId]?.orderData;
+  if (!orderData) {
+    ctx.reply("Ошибка: данные заказа не найдены. Попробуйте оформить заказ заново.");
+    return;
+  }
+  try {
+    console.log("Payment confirmed by user:", userId);
+    let message = `Новый заказ:\nФИО: ${orderData.delivery.name}\nАдрес: ${orderData.delivery.address}\nТелефон: ${orderData.delivery.phone}\n\nТовары:\n`;
+    orderData.items.forEach((item, index) => {
+      message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${item.price}₽\n`;
+    });
+    message += `\nИтого: ${orderData.total}₽`;
+    await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
+    ctx.reply("Ваш заказ отправлен! Мы свяжемся с вами для подтверждения.");
+    delete userStates[userId];
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
+  } catch (error) {
+    console.error("Error processing payment confirmation:", error.message);
+    ctx.reply("Ошибка при подтверждении оплаты. Попробуйте позже.");
+  }
+});
+
 bot.on("photo", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
@@ -155,14 +179,17 @@ bot.on("photo", async (ctx) => {
   if (state === "waiting_for_photo") {
     try {
       console.log("Photos received from user:", userId);
-      // Брать только фото максимального размера (последний элемент)
-      const photo = ctx.message.photo[ctx.message.photo.length - 1];
-      const fileUrl = await bot.telegram.getFileLink(photo.file_id);
-      const response = await axios.get(fileUrl, {
-        responseType: "arraybuffer",
-      });
-      const base64String = `data:image/jpeg;base64,${Buffer.from(response.data).toString("base64")}`;
-      userStates[userId].photos.push(base64String);
+      // Обрабатываем все фото в сообщении, берём только максимальное разрешение
+      const photos = ctx.message.photo;
+      for (const photo of photos.slice(-1)) { // Берём только последнее фото (максимальное)
+        const fileUrl = await bot.telegram.getFileLink(photo.file_id);
+        const response = await axios.get(fileUrl, {
+          responseType: "arraybuffer",
+        });
+        const base64String = `data:image/jpeg;base64,${Buffer.from(response.data).toString("base64")}`;
+        userStates[userId].photos.push(base64String);
+      }
+      // Отправляем ответ один раз за сообщение
       ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
     } catch (error) {
       console.error("Error processing photo:", error.message);
@@ -178,13 +205,19 @@ bot.on("message", async (ctx) => {
       const data = JSON.parse(ctx.message.web_app_data.data);
       if (data.action === "requestPayment") {
         const { total, delivery, items } = data;
-        let message = `Новый заказ:\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\n\nТовары:\n`;
+        userStates[ctx.from.id] = { state: "waiting_for_payment", orderData: data };
+        let message = `Пожалуйста, переведите ${total}₽ на карту: 1234 5678 9012 3456\nПосле оплаты нажмите "Я оплатил".\n\nДетали заказа:\n`;
         items.forEach((item, index) => {
           message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${item.price}₽\n`;
         });
-        message += `\nИтого: ${total}₽`;
-        await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
-        ctx.reply("Ваш заказ отправлен! Мы свяжемся с вами для подтверждения.");
+        message += `\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\nИтого: ${total}₽`;
+        await ctx.reply(message, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
+            ],
+          },
+        });
       }
     } catch (error) {
       console.error("Error processing web app data:", error.message);
@@ -225,7 +258,8 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
     }
     delete userStates[userId];
-  } else if (state === "waiting_for_photo" && ctx.message.text.toLowerCase() === "готово") {
+  } else if (state === "waiting_for_photo" && ctx.message.text.trim().toLowerCase() === "готово") {
+    console.log("Received 'Готово' from user:", userId);
     if (userStates[userId].photos.length === 0) {
       ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
       return;
