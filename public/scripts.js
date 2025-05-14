@@ -6,8 +6,9 @@ tg.ready();
 let cart = [];
 let isAdminAuthenticated = false;
 let isAdminUser = false;
+
 let deliveryData = null;
-let pendingPurchase = null;
+let pendingPurchase = null; // Хранит данные о покупке (один товар или все)
 
 // Переменные для хранения текущих фильтров
 let currentFilters = {
@@ -18,10 +19,10 @@ let currentFilters = {
   conditions: [],
 };
 
-// Список ID администраторов
+// Список ID администраторов (замени на реальные ID)
 const adminUserIds = [570191364];
 
-// Переменные для хранения данных
+// Переменные для хранения данных (больше не используем localStorage)
 let products = [];
 let reviews = [];
 
@@ -44,38 +45,32 @@ function renderBottomNav() {
   }
 }
 
-// Загрузка данных с сервера
+// Загрузка данных с сервера при старте
 async function loadData() {
   try {
     const productsResponse = await axios.get(
       "https://shroud.onrender.com/api/products"
     );
     products = productsResponse.data;
+
     const reviewsResponse = await axios.get(
       "https://shroud.onrender.com/api/reviews"
     );
     reviews = reviewsResponse.data;
-    renderCatalog();
-    renderReviews();
+
+    renderCatalog(); // Обновляем каталог после загрузки данных
+    renderReviews(); // Обновляем отзывы
   } catch (error) {
     console.error("Ошибка при загрузке данных:", error);
-    showNotification("Не удалось загрузить данные. Проверьте подключение.");
+    alert("Не удалось загрузить данные. Проверьте подключение к серверу.");
   }
-}
-
-// Кастомные уведомления
-function showNotification(message) {
-  const notification = document.createElement("div");
-  notification.className = "notification";
-  notification.textContent = message;
-  document.getElementById("notificationContainer").appendChild(notification);
-  setTimeout(() => notification.remove(), 3000);
 }
 
 // Проверка пароля администратора
 async function checkAdminPassword() {
   const password = document.getElementById("adminPassword").value;
-  const correctPassword = "admin123";
+  const correctPassword = "admin123"; // В будущем перенесём на сервер
+
   if (password === correctPassword) {
     isAdminAuthenticated = true;
     document.getElementById("adminPassword").style.display = "none";
@@ -85,22 +80,22 @@ async function checkAdminPassword() {
     document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent3").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
-    await loadData();
+    await loadData(); // Загружаем данные для админ-панели
     renderAdmin();
-    showNotification("Доступ открыт!");
+    alert("Доступ открыт!");
   } else {
-    showNotification("Неверный пароль!");
+    alert("Неверный пароль!");
   }
 }
 
-// Отображение каталога
+// Функция для отображения каталога
 function renderCatalog(filteredProducts = products) {
   const catalogDiv = document.getElementById("catalog");
   catalogDiv.innerHTML = "";
-  filteredProducts.forEach((product, index) => {
+
+  filteredProducts.forEach((product) => {
     const productDiv = document.createElement("div");
     productDiv.className = "product";
-    productDiv.style.animationDelay = `${index * 0.1}s`;
     productDiv.innerHTML = `
       <div class="product-image-container">
         <img src="${product.images[0]}" alt="${product.name}">
@@ -117,32 +112,38 @@ function renderCatalog(filteredProducts = products) {
   });
 }
 
-// Фильтрация товаров
+// Функция для фильтрации товаров
 function filterProducts() {
   let filteredProducts = products;
+
   if (currentFilters.categories.length > 0) {
     const mainCategories = ["Футболка", "Лонгслив", "Худи"];
     const selectedMainCategories = currentFilters.categories.filter((cat) =>
       mainCategories.includes(cat)
     );
     const includeOther = currentFilters.categories.includes("Другое");
+
     filteredProducts = filteredProducts.filter((product) => {
       if (
         selectedMainCategories.length > 0 &&
         selectedMainCategories.includes(product.category)
-      )
+      ) {
         return true;
-      if (includeOther && !mainCategories.includes(product.category))
+      }
+      if (includeOther && !mainCategories.includes(product.category)) {
         return true;
+      }
       return false;
     });
   }
+
   if (currentFilters.sizes.length > 0) {
     filteredProducts = filteredProducts.filter((product) => {
       if (product.size.length === 0) return false;
       return product.size.some((size) => currentFilters.sizes.includes(size));
     });
   }
+
   if (currentFilters.minPrice !== null) {
     filteredProducts = filteredProducts.filter(
       (product) => product.price >= currentFilters.minPrice
@@ -153,21 +154,24 @@ function filterProducts() {
       (product) => product.price <= currentFilters.maxPrice
     );
   }
+
   if (currentFilters.conditions.length > 0) {
     filteredProducts = filteredProducts.filter((product) =>
       currentFilters.conditions.includes(String(product.condition))
     );
   }
+
   const searchTerm = document.getElementById("searchInput").value.toLowerCase();
   if (searchTerm) {
     filteredProducts = filteredProducts.filter((product) =>
       product.name.toLowerCase().includes(searchTerm)
     );
   }
+
   return filteredProducts;
 }
 
-// Применение фильтров
+// Функция для применения фильтров
 function applyFilters() {
   const categoryCheckboxes = document.querySelectorAll(
     'input[name="category"]:checked'
@@ -175,27 +179,30 @@ function applyFilters() {
   currentFilters.categories = Array.from(categoryCheckboxes).map(
     (checkbox) => checkbox.value
   );
+
   const sizeCheckboxes = document.querySelectorAll(
     'input[name="size"]:checked'
   );
   currentFilters.sizes = Array.from(sizeCheckboxes).map(
     (checkbox) => checkbox.value
   );
+
   const minPrice = document.getElementById("minPrice").value;
   const maxPrice = document.getElementById("maxPrice").value;
   currentFilters.minPrice = minPrice ? Number(minPrice) : null;
   currentFilters.maxPrice = maxPrice ? Number(maxPrice) : null;
+
   const conditionCheckboxes = document.querySelectorAll(
     'input[name="condition"]:checked'
   );
   currentFilters.conditions = Array.from(conditionCheckboxes).map(
     (checkbox) => checkbox.value
   );
+
   showScreen("catalogScreen");
-  showNotification("Фильтры применены!");
 }
 
-// Сброс фильтров
+// Функция для сброса фильтров
 function resetFilters() {
   currentFilters = {
     categories: [],
@@ -204,32 +211,35 @@ function resetFilters() {
     maxPrice: null,
     conditions: [],
   };
-  document
-    .querySelectorAll('input[name="category"]')
-    .forEach((checkbox) => (checkbox.checked = false));
-  document
-    .querySelectorAll('input[name="size"]')
-    .forEach((checkbox) => (checkbox.checked = false));
+
+  document.querySelectorAll('input[name="category"]').forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+  document.querySelectorAll('input[name="size"]').forEach((checkbox) => {
+    checkbox.checked = false;
+  });
   document.getElementById("minPrice").value = "";
   document.getElementById("maxPrice").value = "";
-  document
-    .querySelectorAll('input[name="condition"]')
-    .forEach((checkbox) => (checkbox.checked = false));
+  document.querySelectorAll('input[name="condition"]').forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+
   showScreen("catalogScreen");
-  showNotification("Фильтры сброшены!");
 }
 
-// Страница товара
+// Функция для отображения страницы товара
 let currentImageIndex = 0;
 function showProductPage(productId) {
   const product = products.find((p) => p.id === productId);
   currentImageIndex = 0;
+
   const sizeOptions =
     product.size.length > 0
       ? `<select id="sizeSelect">${product.size
           .map((size) => `<option value="${size}">${size}</option>`)
           .join("")}</select>`
       : "<p>Без размера</p>";
+
   const productPageDiv = document.getElementById("productPage");
   productPageDiv.innerHTML = `
     <div class="product-image">
@@ -246,7 +256,7 @@ function showProductPage(productId) {
       <p>Цена: ${product.price}₽</p>
       <button class="add-to-cart-btn" onclick="addToCart(${
         product.id
-      })">🛒 Добавить в корзину</button>
+      })">ДОБАВИТЬ В КОРЗИНУ</button>
       <p>Состояние:</p>
       <div class="stars">${renderStars(product.condition)}</div>
     </div>
@@ -254,15 +264,16 @@ function showProductPage(productId) {
   showScreen("productScreen");
 }
 
-// Отображение корзины
+// Функция для отображения корзины
 function renderCart() {
   const cartDiv = document.getElementById("cart");
   cartDiv.innerHTML = "";
+
   if (cart.length === 0) {
     cartDiv.innerHTML = "<p>Корзина пуста</p>";
-    document.getElementById("cartCount").style.display = "none";
     return;
   }
+
   cart.forEach((item, index) => {
     const cartItemDiv = document.createElement("div");
     cartItemDiv.className = "cart-item";
@@ -275,22 +286,23 @@ function renderCart() {
       </div>
       <div class="cart-item-actions">
         <button class="remove-btn" onclick="removeFromCart(${index})">✖</button>
-        <button class="buy-btn" onclick="buyItem(${index})">Купить</button>
+        <button class="buy-btn" onclick="buyItem(${index})">КУПИТЬ</button>
       </div>
     `;
     cartDiv.appendChild(cartItemDiv);
   });
-  document.getElementById("cartCount").textContent = cart.length;
-  document.getElementById("cartCount").style.display = "inline";
 }
 
-// Отображение админ-панели
+// Функция для отображения и управления товарами и отзывами в админке
 function renderAdmin() {
   if (!isAdminAuthenticated) return;
+
   const productListDiv = document.getElementById("productList");
   const reviewListDiv = document.getElementById("reviewList");
+
   productListDiv.innerHTML = "";
   reviewListDiv.innerHTML = "";
+
   products.forEach((product, index) => {
     const productItemDiv = document.createElement("div");
     productItemDiv.className = "product-item";
@@ -304,6 +316,7 @@ function renderAdmin() {
     `;
     productListDiv.appendChild(productItemDiv);
   });
+
   reviews.forEach((review, index) => {
     const reviewItemDiv = document.createElement("div");
     reviewItemDiv.className = "review-item";
@@ -317,9 +330,10 @@ function renderAdmin() {
   });
 }
 
-// Добавление товара
+// Функция для добавления товара
 async function addProduct() {
   if (!isAdminAuthenticated) return;
+
   const name = document.getElementById("newProductName").value;
   const category = document.getElementById("newProductCategory").value;
   const sizesInput = document
@@ -332,6 +346,7 @@ async function addProduct() {
     document.getElementById("newProductCondition").value
   );
   const imageInput = document.getElementById("newProductImage");
+
   if (
     name &&
     category &&
@@ -354,17 +369,17 @@ async function addProduct() {
     for (let i = 0; i < imageInput.files.length; i++) {
       formData.append("images", imageInput.files[i]);
     }
+
     try {
       const response = await axios.post(
         "https://shroud.onrender.com/api/products",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       products.push(response.data);
+      // Уведомляем подписчиков о новом товаре
       await axios.post("https://shroud.onrender.com/notify", response.data);
-      showNotification("Товар добавлен!");
+      alert("Товар добавлен!");
       document.getElementById("newProductName").value = "";
       document.getElementById("newProductCategory").value = "";
       document.getElementById("newProductSizes").value = "";
@@ -375,16 +390,14 @@ async function addProduct() {
       renderCatalog(filterProducts());
     } catch (error) {
       console.error(error);
-      showNotification("Ошибка при добавлении товара.");
+      alert("Ошибка при добавлении товара.");
     }
   } else {
-    showNotification(
-      "Заполните все поля корректно! Состояние должно быть от 1 до 5."
-    );
+    alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
   }
 }
 
-// Редактирование товара
+// Функция для редактирования товара
 function editProduct(index) {
   const product = products[index];
   document.getElementById("editProductIndex").value = index;
@@ -397,7 +410,7 @@ function editProduct(index) {
   document.getElementById("editProductForm").style.display = "block";
 }
 
-// Обновление товара
+// Функция для обновления товара
 async function updateProduct() {
   const index = Number(document.getElementById("editProductIndex").value);
   const product = products[index];
@@ -413,6 +426,7 @@ async function updateProduct() {
     document.getElementById("editProductCondition").value
   );
   const imageInput = document.getElementById("editProductImage");
+
   if (
     name &&
     category &&
@@ -431,38 +445,35 @@ async function updateProduct() {
     for (let i = 0; i < imageInput.files.length; i++) {
       formData.append("images", imageInput.files[i]);
     }
+
     try {
       const response = await axios.put(
         `https://shroud.onrender.com/api/products/${product._id}`,
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       products[index] = response.data;
-      showNotification("Товар обновлён!");
+      alert("Товар обновлён!");
       document.getElementById("editProductForm").style.display = "none";
       document.getElementById("adminContent").style.display = "block";
       renderAdmin();
       renderCatalog(filterProducts());
     } catch (error) {
       console.error(error);
-      showNotification("Ошибка при обновлении товара.");
+      alert("Ошибка при обновлении товара.");
     }
   } else {
-    showNotification(
-      "Заполните все поля корректно! Состояние должно быть от 1 до 5."
-    );
+    alert("Заполните все поля корректно! Состояние должно быть от 1 до 5.");
   }
 }
 
-// Отмена редактирования товара
+// Функция для отмены редактирования товара
 function cancelEditProduct() {
   document.getElementById("editProductForm").style.display = "none";
   document.getElementById("adminContent").style.display = "block";
 }
 
-// Удаление товара
+// Функция для удаления товара
 async function deleteProduct(index) {
   if (!isAdminAuthenticated) return;
   const product = products[index];
@@ -473,18 +484,19 @@ async function deleteProduct(index) {
     products.splice(index, 1);
     renderAdmin();
     renderCatalog(filterProducts());
-    showNotification("Товар удалён!");
   } catch (error) {
     console.error(error);
-    showNotification("Ошибка при удалении товара.");
+    alert("Ошибка при удалении товара.");
   }
 }
 
-// Добавление отзыва
+// Функция для добавления отзыва
 async function addReview() {
   if (!isAdminAuthenticated) return;
+
   const username = document.getElementById("newReviewUsername").value;
   const text = document.getElementById("newReviewText").value;
+
   if (username && text) {
     const newReview = { username, text, approved: true };
     try {
@@ -493,21 +505,21 @@ async function addReview() {
         newReview
       );
       reviews.push(response.data);
-      showNotification("Отзыв добавлен!");
+      alert("Отзыв добавлен!");
       document.getElementById("newReviewUsername").value = "";
       document.getElementById("newReviewText").value = "";
       renderAdmin();
       renderReviews();
     } catch (error) {
       console.error(error);
-      showNotification("Ошибка при добавлении отзыва.");
+      alert("Ошибка при добавлении отзыва.");
     }
   } else {
-    showNotification("Заполните все поля!");
+    alert("Заполните все поля!");
   }
 }
 
-// Редактирование отзыва
+// Функция для редактирования отзыва
 function editReview(index) {
   const review = reviews[index];
   document.getElementById("editReviewIndex").value = index;
@@ -517,12 +529,13 @@ function editReview(index) {
   document.getElementById("editReviewForm").style.display = "block";
 }
 
-// Обновление отзыва
+// Функция для обновления отзыва
 async function updateReview() {
   const index = Number(document.getElementById("editReviewIndex").value);
   const review = reviews[index];
   const username = document.getElementById("editReviewUsername").value;
   const text = document.getElementById("editReviewText").value;
+
   if (username && text) {
     const updatedReview = { ...review, username, text };
     try {
@@ -531,27 +544,27 @@ async function updateReview() {
         updatedReview
       );
       reviews[index] = updatedReview;
-      showNotification("Отзыв обновлён!");
+      alert("Отзыв обновлён!");
       document.getElementById("editReviewForm").style.display = "none";
       document.getElementById("adminContent2").style.display = "block";
       renderAdmin();
       renderReviews();
     } catch (error) {
       console.error(error);
-      showNotification("Ошибка при обновлении отзыва.");
+      alert("Ошибка при обновлении отзыва.");
     }
   } else {
-    showNotification("Заполните все поля!");
+    alert("Заполните все поля!");
   }
 }
 
-// Отмена редактирования отзыва
+// Функция для отмены редактирования отзыва
 function cancelEditReview() {
   document.getElementById("editReviewForm").style.display = "none";
   document.getElementById("adminContent2").style.display = "block";
 }
 
-// Удаление отзыва
+// Функция для удаления отзыва
 async function deleteReview(index) {
   if (!isAdminAuthenticated) return;
   const review = reviews[index];
@@ -560,21 +573,22 @@ async function deleteReview(index) {
     reviews.splice(index, 1);
     renderAdmin();
     renderReviews();
-    showNotification("Отзыв удалён!");
   } catch (error) {
     console.error(error);
-    showNotification("Ошибка при удалении отзыва.");
+    alert("Ошибка при удалении отзыва.");
   }
 }
 
-// Отображение отзывов
+// Функция для отображения отзывов
 function renderReviews() {
   const reviewsDiv = document.getElementById("reviews");
   reviewsDiv.innerHTML = "";
+
   if (reviews.length === 0) {
     reviewsDiv.innerHTML = "<p>Отзывов пока нет</p>";
     return;
   }
+
   reviews.forEach((review, index) => {
     const reviewDiv = document.createElement("div");
     reviewDiv.className = "review";
@@ -587,7 +601,7 @@ function renderReviews() {
   });
 }
 
-// Добавление в корзину
+// Функция для добавления в корзину
 function addToCart(productId) {
   const product = products.find((p) => p.id === productId);
   const selectedSize =
@@ -596,44 +610,42 @@ function addToCart(productId) {
       : null;
   const cartItem = { ...product, selectedSize };
   cart.push(cartItem);
-  showNotification(
+  alert(
     `${product.name} (Размер: ${
       selectedSize || "Без размера"
     }) добавлен в корзину!`
   );
   tg.MainButton.setText("Перейти в корзину");
   tg.MainButton.show();
-  renderCart();
 }
 
-// Удаление из корзины
+// Функция для удаления из корзины
 function removeFromCart(index) {
   cart.splice(index, 1);
   renderCart();
   if (cart.length === 0) {
     tg.MainButton.hide();
   }
-  showNotification("Товар удалён из корзины!");
 }
 
-// Покупка одного товара
+// Функция для покупки одного товара
 function buyItem(index) {
   const item = cart[index];
   pendingPurchase = { type: "single", index, item };
   showScreen("deliveryScreen");
 }
 
-// Покупка всех товаров
+// Функция для покупки всех товаров
 function buyAll() {
   if (cart.length === 0) {
-    showNotification("Корзина пуста!");
+    alert("Корзина пуста!");
     return;
   }
   pendingPurchase = { type: "all", items: [...cart] };
   showScreen("deliveryScreen");
 }
 
-// Смена изображения
+// Функция для смены изображения
 function changeImage(direction) {
   const product = products.find((p) => p.id === getCurrentProductId());
   currentImageIndex =
@@ -643,13 +655,13 @@ function changeImage(direction) {
     product.images[currentImageIndex];
 }
 
-// Получение текущего ID товара
+// Функция для получения текущего ID товара
 function getCurrentProductId() {
   const productName = document.querySelector(".product-details h2").textContent;
   return products.find((p) => p.name === productName).id;
 }
 
-// Отображение звёзд
+// Функция для отображения звёзд
 function renderStars(count) {
   let stars = "";
   for (let i = 0; i < 5; i++) {
@@ -658,7 +670,7 @@ function renderStars(count) {
   return stars;
 }
 
-// Переключение экранов
+// Функция для переключения экранов
 function showScreen(screenId) {
   document.querySelectorAll(".screen").forEach((screen) => {
     screen.classList.remove("active");
@@ -672,7 +684,7 @@ function showScreen(screenId) {
     renderReviews();
   } else if (screenId === "adminScreen") {
     if (!isAdminUser) {
-      showNotification("Доступ запрещён!");
+      alert("Доступ запрещён!");
       showScreen("catalogScreen");
       return;
     }
@@ -688,26 +700,33 @@ function showScreen(screenId) {
   }
 }
 
-// Поиск
+// Функция для поиска
 document.getElementById("searchInput").addEventListener("input", () => {
   renderCatalog(filterProducts());
 });
 
-// Переход в корзину
+function showReviews() {
+  showScreen("reviewsScreen");
+}
+
 tg.MainButton.onClick(() => {
   showScreen("cartScreen");
 });
 
-// Отправка данных доставки
 function submitDelivery() {
   const name = document.getElementById("deliveryName").value.trim();
   const address = document.getElementById("deliveryAddress").value.trim();
   const phone = document.getElementById("deliveryPhone").value.trim();
+
   if (!name || !address || !phone) {
-    showNotification("Пожалуйста, заполните все поля!");
+    alert("Пожалуйста, заполните все поля!");
     return;
   }
+
+  // Сохраняем данные доставки
   deliveryData = { name, address, phone };
+
+  // Рассчитываем сумму
   let total = 0;
   let items = [];
   if (pendingPurchase.type === "single") {
@@ -727,18 +746,22 @@ function submitDelivery() {
       size: item.selectedSize || "Без размера",
     }));
   }
+
+  // Формируем данные для передачи в бота
   const orderData = JSON.stringify({
     action: "requestPayment",
     total,
     delivery: deliveryData,
     items,
   });
+  // Отправляем запрос боту для показа инструкции оплаты
   tg.sendData(orderData);
+
+  // Покажем экран ожидания или оставим текущий
   showScreen("catalogScreen");
-  showNotification("Заказ оформлен! Ожидайте инструкции.");
 }
 
-// Инициализация
+// Проверяем пользователя, отображаем навигацию и загружаем данные
 checkIfAdminUser();
 renderBottomNav();
 loadData();
