@@ -194,19 +194,16 @@ bot.on("photo", async (ctx) => {
   if (state === "waiting_for_photo") {
     try {
       console.log("Photos received from user:", userId);
-      const photos = ctx.message.photo;
-      for (const photo of photos) {
-        // Обрабатываем все размеры фото, как в старой версии
-        const fileUrl = await bot.telegram.getFileLink(photo.file_id);
-        const response = await axios.get(fileUrl, {
-          responseType: "arraybuffer",
-        });
-        const base64String = `data:image/jpeg;base64,${Buffer.from(
-          response.data
-        ).toString("base64")}`;
-        userStates[userId].photos.push(base64String);
-        ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'."); // Ответ для каждого фото
-      }
+      const photo = ctx.message.photo[ctx.message.photo.length - 1]; // Берём только фото максимального размера
+      const fileUrl = await bot.telegram.getFileLink(photo.file_id);
+      const response = await axios.get(fileUrl, {
+        responseType: "arraybuffer",
+      });
+      const base64String = `data:image/jpeg;base64,${Buffer.from(
+        response.data
+      ).toString("base64")}`;
+      userStates[userId].photos.push(base64String);
+      ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
     } catch (error) {
       console.error("Error processing photo:", error.message);
       ctx.reply("Ошибка при загрузке фото. Попробуйте снова.");
