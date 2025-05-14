@@ -46,7 +46,7 @@ function renderBottomNav() {
   }
 }
 
-// Загрузка данных с сервера при старте
+// Загрузка данных с сервера приēd
 async function loadData() {
   try {
     console.log(
@@ -517,18 +517,16 @@ async function addReview() {
   const text = document.getElementById("newReviewText").value;
 
   if (username && text) {
-    const newReview = { username, text, approved: true };
+    const newReview = { username, text }; // approved: false по умолчанию
     try {
       const response = await axios.post(
         "https://shroud.onrender.com/api/reviews",
         newReview
       );
-      reviews.push(response.data);
-      alert("Отзыв добавлен!");
+      alert("Отзыв отправлен на проверку!");
       document.getElementById("newReviewUsername").value = "";
       document.getElementById("newReviewText").value = "";
       renderAdmin();
-      renderReviews();
     } catch (error) {
       console.error("Error adding review:", error.message);
       alert("Ошибка при добавлении отзыва.");

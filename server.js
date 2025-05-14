@@ -14,7 +14,7 @@ const upload = multer({ storage: storage });
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: "*" })); // Разрешить все источники для Telegram Web App
+app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
@@ -286,7 +286,7 @@ app.post("/api/forms", async (req, res) => {
 app.get("/api/reviews", async (req, res) => {
   console.log("GET /api/reviews called");
   try {
-    const reviews = await Review.find();
+    const reviews = await Review.find({ approved: true });
     res.json(reviews);
   } catch (error) {
     console.error("Error fetching reviews:", error.message);
@@ -304,6 +304,36 @@ app.post("/api/reviews", async (req, res) => {
   } catch (error) {
     console.error("Error saving review:", error.message);
     res.status(500).json({ error: "Error saving review" });
+  }
+});
+
+app.delete("/api/reviews/:id", async (req, res) => {
+  console.log("DELETE /api/reviews/:id called with id:", req.params.id);
+  try {
+    await Review.findByIdAndDelete(req.params.id);
+    console.log("Review deleted");
+    res.json({ message: "Review deleted" });
+  } catch (error) {
+    console.error("Error deleting review:", error.message);
+    res.status(500).json({ error: "Error deleting review" });
+  }
+});
+
+app.put("/api/reviews/:id/approve", async (req, res) => {
+  console.log("PUT /api/reviews/:id/approve called with id:", req.params.id);
+  try {
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      console.error("Review not found");
+      return res.status(404).json({ error: "Review not found" });
+    }
+    review.approved = true;
+    await review.save();
+    console.log("Review approved:", review);
+    res.json(review);
+  } catch (error) {
+    console.error("Error approving review:", error.message);
+    res.status(500).json({ error: "Error approving review" });
   }
 });
 
