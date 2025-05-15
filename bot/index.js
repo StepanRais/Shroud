@@ -6,39 +6,24 @@ require("dotenv").config();
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const userStates = {};
 
-// Функция для уведомления подписчиков
 async function notifySubscribers(product) {
   try {
-    console.log("Notifying subscribers about product:", product);
     const response = await axios.get(
       "https://shroud.onrender.com/api/subscribers"
     );
     const subscribers = response.data;
-    console.log("Found subscribers:", subscribers);
-    if (subscribers.length === 0) {
-      console.log("No subscribers found");
-      return;
-    }
     for (const subscriber of subscribers) {
-      console.log(`Sending message to user ${subscriber.userId}`);
       await bot.telegram.sendMessage(
         subscriber.userId,
         `Новое поступление "${product.category}" "${product.name}"`
       );
     }
-    console.log("Notifications sent successfully");
   } catch (error) {
     console.error("Error sending notifications:", error.message);
-    if (error.response) {
-      console.error("Response status:", error.response.status);
-      console.error("Response data:", error.response.data);
-    }
   }
 }
 
-// Логика бота
 bot.start((ctx) => {
-  console.log("Start command received from user:", ctx.from.id);
   ctx.reply("Добро пожаловать в магазин мерча! 😎", {
     reply_markup: {
       inline_keyboard: [
@@ -54,41 +39,21 @@ bot.start((ctx) => {
         [{ text: "Создать анкету 📝", callback_data: "create_form" }],
         [{ text: "Наш канал 📢", callback_data: "visit_channel" }],
       ],
-      remove_keyboard: true,
-    },
-  });
-});
-
-bot.action("open_shop", (ctx) => {
-  console.log("Opening shop for user:", ctx.from.id);
-  ctx.reply("Открываем магазин...", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "Открыть магазин 🛒",
-            web_app: { url: "https://shroud.onrender.com" },
-          },
-        ],
-      ],
     },
   });
 });
 
 bot.action("leave_review", (ctx) => {
-  console.log("User wants to leave review:", ctx.from.id);
   userStates[ctx.from.id] = { state: "waiting_for_review" };
   ctx.reply("Напишите ваш отзыв:", { reply_markup: { force_reply: true } });
 });
 
 bot.action("subscribe", async (ctx) => {
-  console.log("Subscription request from user:", ctx.from.id);
   try {
     const response = await axios.get(
       "https://shroud.onrender.com/api/subscribers"
     );
-    const subscribers = response.data;
-    if (subscribers.some((sub) => sub.userId === ctx.from.id)) {
+    if (response.data.some((sub) => sub.userId === ctx.from.id)) {
       ctx.reply("Вы уже подписаны на рассылку! 📬");
       return;
     }
@@ -98,12 +63,11 @@ bot.action("subscribe", async (ctx) => {
     ctx.reply("Вы подписались на рассылку! 📬");
   } catch (error) {
     console.error("Error subscribing:", error.message);
-    ctx.reply("Ошибка при подписке. Попробуйте позже.");
+    ctx.reply("Ошибка при подписке.");
   }
 });
 
 bot.action("unsubscribe", async (ctx) => {
-  console.log("Unsubscription request from user:", ctx.from.id);
   try {
     await axios.delete(
       `https://shroud.onrender.com/api/subscribers/${ctx.from.id}`
@@ -111,12 +75,11 @@ bot.action("unsubscribe", async (ctx) => {
     ctx.reply("Вы отписались от рассылки! 📴");
   } catch (error) {
     console.error("Error unsubscribing:", error.message);
-    ctx.reply("Ошибка при отписке. Попробуйте позже.");
+    ctx.reply("Ошибка при отписке.");
   }
 });
 
 bot.action("create_form", (ctx) => {
-  console.log("User wants to create form:", ctx.from.id);
   userStates[ctx.from.id] = { state: "waiting_for_photo", photos: [] };
   ctx.reply(
     "Отправьте фото товара (можно несколько). Когда закончите, напишите 'Готово'."
@@ -124,14 +87,12 @@ bot.action("create_form", (ctx) => {
 });
 
 bot.action("visit_channel", (ctx) => {
-  console.log("User wants to visit channel:", ctx.from.id);
   ctx.reply("Подписывайтесь на наш канал: https://t.me/your_channel");
 });
 
 bot.action(/approve_review_(.+)/, async (ctx) => {
   const reviewId = ctx.match[1];
   try {
-    console.log("Approving review:", reviewId);
     await axios.put(
       `https://shroud.onrender.com/api/reviews/${reviewId}/approve`
     );
@@ -146,7 +107,6 @@ bot.action(/approve_review_(.+)/, async (ctx) => {
 bot.action(/reject_review_(.+)/, async (ctx) => {
   const reviewId = ctx.match[1];
   try {
-    console.log("Rejecting review:", reviewId);
     await axios.delete(`https://shroud.onrender.com/api/reviews/${reviewId}`);
     ctx.reply("Отзыв отклонён!");
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
@@ -160,15 +120,12 @@ bot.action("payment_confirmed", async (ctx) => {
   const userId = ctx.from.id;
   const orderData = userStates[userId]?.orderData;
   if (!orderData) {
-    ctx.reply(
-      "Ошибка: данные заказа не найдены. Попробуйте оформить заказ заново."
-    );
+    ctx.reply("Ошибка: данные заказа не найдены.");
     return;
   }
   try {
-    console.log("Payment confirmed by user:", userId);
-    let message = `Новый заказ:\nПокупатель: @${
-      ctx.from.username || "Аноним"
+    let message = `Новый заказ:\nПокупатель: ${
+      ctx.from.username ? "@" + ctx.from.username : "Аноним"
     } (ID: ${userId})\n`;
     message += `ФИО: ${orderData.delivery.name}\nАдрес: ${orderData.delivery.address}\nТелефон: ${orderData.delivery.phone}\n\nТовары:\n`;
     orderData.items.forEach((item, index) => {
@@ -178,26 +135,55 @@ bot.action("payment_confirmed", async (ctx) => {
     });
     message += `\nИтого: ${orderData.total}₽`;
     await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
+
+    // Удаление купленных товаров или размеров
+    for (const item of orderData.items) {
+      const productResponse = await axios.get(
+        `https://shroud.onrender.com/api/products`
+      );
+      const product = productResponse.data.find((p) => p.name === item.name);
+      if (product) {
+        if (product.size.length > 1) {
+          // Удаляем только размер
+          const newSizes = product.size.filter((size) => size !== item.size);
+          await axios.put(
+            `https://shroud.onrender.com/api/products/${product._id}`,
+            {
+              name: product.name,
+              size: newSizes.join(","),
+              price: product.price,
+              category: product.category,
+              condition: product.condition,
+              year: product.year,
+              blank: product.blank,
+            },
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+        } else {
+          // Удаляем товар полностью
+          await axios.delete(
+            `https://shroud.onrender.com/api/products/${product._id}`
+          );
+        }
+      }
+    }
+
     ctx.reply("Ваш заказ отправлен! Мы свяжемся с вами для подтверждения.");
     delete userStates[userId];
     await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } });
   } catch (error) {
-    console.error("Error processing payment confirmation:", error.message);
-    ctx.reply("Ошибка при подтверждении оплаты. Попробуйте позже.");
+    console.error("Error processing payment:", error.message);
+    ctx.reply("Ошибка при подтверждении оплаты.");
   }
 });
 
 bot.on("photo", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
-
   if (state === "waiting_for_photo") {
     try {
-      console.log("Photos received from user:", userId);
-      // Обрабатываем все фото в сообщении, берём только максимальное разрешение
       const photos = ctx.message.photo;
       for (const photo of photos.slice(-1)) {
-        // Берём только последнее фото (максимальное)
         const fileUrl = await bot.telegram.getFileLink(photo.file_id);
         const response = await axios.get(fileUrl, {
           responseType: "arraybuffer",
@@ -207,11 +193,10 @@ bot.on("photo", async (ctx) => {
         ).toString("base64")}`;
         userStates[userId].photos.push(base64String);
       }
-      // Отправляем ответ один раз за сообщение
       ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
     } catch (error) {
       console.error("Error processing photo:", error.message);
-      ctx.reply("Ошибка при загрузке фото. Попробуйте снова.");
+      ctx.reply("Ошибка при загрузке фото.");
     }
   }
 });
@@ -220,12 +205,8 @@ bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
   const text = ctx.message.text.trim().toLowerCase();
-
-  console.log(`Text received from user ${userId}: "${text}", state: ${state}`);
-
   if (state === "waiting_for_review" && text !== "готово") {
     try {
-      console.log("Review received from user:", userId);
       const review = {
         username: ctx.from.username || ctx.from.first_name || "Аноним",
         text: ctx.message.text,
@@ -236,8 +217,10 @@ bot.on("text", async (ctx) => {
       );
       await bot.telegram.sendMessage(
         process.env.ADMIN_CHAT_ID,
-        `Новый отзыв от @${
-          ctx.from.username || ctx.from.first_name || "Аноним"
+        `Новый отзыв от ${
+          ctx.from.username
+            ? "@" + ctx.from.username
+            : ctx.from.first_name || "Аноним"
         }:\n${ctx.message.text}`,
         {
           reply_markup: {
@@ -259,19 +242,20 @@ bot.on("text", async (ctx) => {
       ctx.reply("Спасибо за ваш отзыв! Он будет опубликован после проверки.");
     } catch (error) {
       console.error("Error saving review:", error.message);
-      ctx.reply("Ошибка при отправке отзыва. Попробуйте позже.");
+      ctx.reply("Ошибка при отправке отзыва.");
     }
     delete userStates[userId];
   } else if (state === "waiting_for_photo" && text === "готово") {
-    console.log("Received 'Готово' from user:", userId);
     if (userStates[userId].photos.length === 0) {
-      ctx.reply("Вы не добавили ни одного фото. Пожалуйста, отправьте фото.");
+      ctx.reply("Вы не добавили ни одного фото.");
       return;
     }
     userStates[userId].state = "waiting_for_form_text";
     ctx.reply(
       "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
-      { reply_markup: { force_reply: true } }
+      {
+        reply_markup: { force_reply: true },
+      }
     );
   } else if (state === "waiting_for_form_text") {
     const [name, size, condition, category] = ctx.message.text
@@ -287,18 +271,17 @@ bot.on("text", async (ctx) => {
       approved: false,
     };
     try {
-      console.log("Form submitted by user:", userId);
       await axios.post("https://shroud.onrender.com/api/forms", form);
-      const caption = `Новая анкета от @${
-        ctx.from.username || ctx.from.first_name || "Аноним"
-      }:\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${
+      const caption = `Новая анкета от ${
+        ctx.from.username ? "@" + ctx.from.username : "Аноним"
+      } (ID: ${userId}):\nНазвание: ${name}\nРазмер: ${size}\nСостояние: ${condition}\nКатегория: ${category}\nФото: ${
         userStates[userId].photos.length
       } шт.`;
       if (userStates[userId].photos.length > 0) {
         const mediaGroup = userStates[userId].photos.map((photo, index) => ({
           type: "photo",
           media: { source: Buffer.from(photo.split(",")[1], "base64") },
-          caption: index === 0 ? caption : undefined, // Подпись только для первого фото
+          caption: index === 0 ? caption : undefined,
         }));
         await bot.telegram.sendMediaGroup(
           process.env.ADMIN_CHAT_ID,
@@ -310,7 +293,7 @@ bot.on("text", async (ctx) => {
       ctx.reply("Анкета принята на рассмотрение!");
     } catch (error) {
       console.error("Error submitting form:", error.message);
-      ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
+      ctx.reply("Ошибка при отправке анкеты.");
     }
     delete userStates[userId];
   }
@@ -319,7 +302,6 @@ bot.on("text", async (ctx) => {
 bot.on("message", async (ctx) => {
   if (ctx.message.web_app_data) {
     try {
-      console.log("Web app data received from user:", ctx.from.id);
       const data = JSON.parse(ctx.message.web_app_data.data);
       if (data.action === "requestPayment") {
         const { total, delivery, items } = data;
@@ -328,19 +310,14 @@ bot.on("message", async (ctx) => {
           orderData: data,
         };
         let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
-        message += `Имя получателя: Иван Иванов\n`;
-        message += `Банк: Сбербанк\n`;
-        message += `После оплаты нажмите "Я оплатил".\n\n`;
-        message += `Детали заказа:\n`;
+        message += `Имя получателя: Иван Иванов\nБанк: Сбербанк\n`;
+        message += `После оплаты нажмите "Я оплатил".\n\nДетали заказа:\n`;
         items.forEach((item, index) => {
           message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
             item.price
           }₽\n`;
         });
-        message += `\nФИО: ${delivery.name}\n`;
-        message += `Адрес: ${delivery.address}\n`;
-        message += `Телефон: ${delivery.phone}\n`;
-        message += `Итого: ${total}₽`;
+        message += `\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\nИтого: ${total}₽`;
         await ctx.reply(message, {
           reply_markup: {
             inline_keyboard: [
@@ -351,16 +328,14 @@ bot.on("message", async (ctx) => {
       }
     } catch (error) {
       console.error("Error processing web app data:", error.message);
-      ctx.reply("Ошибка при обработке заказа. Попробуйте позже.");
+      ctx.reply("Ошибка при обработке заказа.");
     }
   }
 });
 
-// Экспорт для использования в server.js
 module.exports = { bot, notifySubscribers };
 
-// Запуск бота только при прямом вызове файла
 if (require.main === module) {
   console.log("Starting bot...");
-  bot.launch().then(() => console.log("Bot launched"));
+  bot.launch().then(() => console.log("Bot's up and running! 🚀"));
 }

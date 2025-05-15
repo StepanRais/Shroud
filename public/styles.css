@@ -17,6 +17,46 @@ body {
   display: block;
 }
 
+/* Стили для уведомлений */
+.notification {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  z-index: 1000;
+}
+.notification.show {
+  opacity: 1;
+}
+
+/* Стили для всплывающей кнопки корзины */
+.cart-button {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff0000;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  z-index: 1000;
+}
+.cart-button.show {
+  opacity: 1;
+}
+
 /* Стили для каталога */
 .search-bar {
   display: flex;
@@ -237,16 +277,13 @@ body {
   padding: 20px;
   text-align: center;
 }
-
 #deliveryScreen h2 {
   margin-bottom: 10px;
 }
-
 #deliveryScreen p {
   margin-bottom: 20px;
   font-style: italic;
 }
-
 #deliveryForm {
   display: flex;
   flex-direction: column;
@@ -254,12 +291,10 @@ body {
   max-width: 300px;
   margin: 0 auto;
 }
-
 #deliveryForm label {
   text-align: left;
   font-weight: bold;
 }
-
 #deliveryForm input,
 #deliveryForm textarea {
   padding: 8px;
@@ -267,12 +302,10 @@ body {
   border-radius: 4px;
   font-size: 16px;
 }
-
 #deliveryForm textarea {
   resize: vertical;
   height: 80px;
 }
-
 #deliveryForm button {
   padding: 10px;
   background-color: #ff0000;
@@ -282,7 +315,6 @@ body {
   cursor: pointer;
   margin-top: 10px;
 }
-
 #deliveryForm button:last-child {
   background-color: #6c757d;
 }

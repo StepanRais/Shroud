@@ -29,12 +29,14 @@ mongoose
 const ProductSchema = new mongoose.Schema({
   id: Number,
   name: String,
-  year: Number,
+  year: { type: Number, required: false },
+  blank: { type: String, required: false },
   size: [String],
   price: Number,
   images: [String],
   category: String,
   condition: Number,
+  reservedBy: { type: Number, default: null }, // Для резерва товара
 });
 
 const ReviewSchema = new mongoose.Schema({
@@ -72,6 +74,7 @@ const initialSetup = async () => {
           id: 1,
           name: "Bal Sagoth",
           year: 1999,
+          blank: "Fruit of the Loom",
           size: ["XL"],
           price: 6000,
           images: ["https://via.placeholder.com/150"],
@@ -119,11 +122,31 @@ app.post("/api/upload", upload.single("photo"), async (req, res) => {
   }
 });
 
+// Проверка доступности товара
+app.post("/api/products/reserve", async (req, res) => {
+  const { productId, size, userId } = req.body;
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    if (product.reservedBy && product.reservedBy !== userId) {
+      return res.status(400).json({ error: "Product already reserved" });
+    }
+    product.reservedBy = userId;
+    await product.save();
+    res.json({ message: "Product reserved" });
+  } catch (error) {
+    console.error("Error reserving product:", error.message);
+    res.status(500).json({ error: "Error reserving product" });
+  }
+});
+
 // API для товаров
 app.get("/api/products", async (req, res) => {
   console.log("GET /api/products called");
   try {
-    const products = await Product.find();
+    const products = await Product.find({ reservedBy: null });
     res.json(products);
   } catch (error) {
     console.error("Error fetching products:", error.message);
@@ -133,7 +156,7 @@ app.get("/api/products", async (req, res) => {
 
 app.post("/api/products", upload.array("images", 5), async (req, res) => {
   console.log("POST /api/products called with body:", req.body);
-  const { id, name, year, size, price, category, condition } = req.body;
+  const { id, name, year, blank, size, price, category, condition } = req.body;
   let images = [];
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
@@ -151,7 +174,8 @@ app.post("/api/products", upload.array("images", 5), async (req, res) => {
   const product = new Product({
     id,
     name,
-    year,
+    year: year ? Number(year) : undefined,
+    blank: blank || undefined,
     size: size ? size.split(",").map((s) => s.trim()) : [],
     price,
     images,
@@ -170,14 +194,15 @@ app.post("/api/products", upload.array("images", 5), async (req, res) => {
 
 app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
   console.log("PUT /api/products/:id called with id:", req.params.id);
-  const { name, year, size, price, category, condition } = req.body;
+  const { name, year, blank, size, price, category, condition } = req.body;
   const updatedProduct = await Product.findById(req.params.id);
   if (!updatedProduct) {
     console.error("Product not found");
     return res.status(404).json({ error: "Product not found" });
   }
   updatedProduct.name = name;
-  updatedProduct.year = year;
+  updatedProduct.year = year ? Number(year) : undefined;
+  updatedProduct.blank = blank || undefined;
   updatedProduct.size = size ? size.split(",").map((s) => s.trim()) : [];
   updatedProduct.price = price;
   updatedProduct.category = category;
