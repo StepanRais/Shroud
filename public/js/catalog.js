@@ -211,6 +211,24 @@ async function addToCart(productId) {
   }
 }
 
+// Добавляем слушатели событий для кнопок фильтров
+function initFilterListeners() {
+  const applyBtn = document.querySelector(".apply-btn");
+  const resetBtn = document.querySelector(".reset-btn");
+
+  if (applyBtn) {
+    applyBtn.addEventListener("click", applyFilters);
+  }
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetFilters);
+  }
+}
+
+// Инициализация слушателей после загрузки DOM
+document.addEventListener("DOMContentLoaded", () => {
+  initFilterListeners();
+});
+
 // Экспорт для других модулей
 export {
   initCatalog,
@@ -219,11 +237,3 @@ export {
   applyFilters,
   resetFilters,
 };
-
-// Глобальная доступность (уже не требуется для этих функций, но оставим для совместимости)
-window.initCatalog = initCatalog;
-window.renderCatalog = renderCatalog;
-window.filterProducts = filterProducts;
-window.applyFilters = applyFilters;
-window.resetFilters = resetFilters;
-Cart;
