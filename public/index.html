@@ -3,26 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shroud</title>
+    <title>Metal Merch Store</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   </head>
   <body>
     <div class="container">
       <div id="notification" class="notification"></div>
 
+      <!-- Catalog Screen -->
       <div id="catalogScreen" class="screen active">
         <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="Поиск..." />
           <span class="search-icon">🔍</span>
-          <input id="searchInput" type="text" placeholder="Поиск..." />
-          <button class="filter-btn" onclick="showScreen('filtersScreen')">
+          <button class="filter-btn" onclick="showScreen('filterScreen')">
             Фильтры ⚙️
           </button>
         </div>
         <div id="catalog" class="catalog"></div>
       </div>
 
+      <!-- Product Screen -->
       <div id="productScreen" class="screen">
         <button class="close-btn" onclick="showScreen('catalogScreen')">
           ✖
@@ -30,37 +35,39 @@
         <div id="productPage" class="product-page"></div>
       </div>
 
+      <!-- Cart Screen -->
       <div id="cartScreen" class="screen">
         <h2>Корзина</h2>
-        <div id="cart"></div>
+        <div id="cart" class="cart"></div>
         <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
       </div>
 
+      <!-- Delivery Screen -->
       <div id="deliveryScreen" class="screen">
         <h2>Оформление доставки</h2>
         <p>Доставка осуществляется только через "Почта России".</p>
         <div class="delivery-form">
           <label>Ваше имя:</label>
-          <input id="deliveryName" type="text" placeholder="Иван Иванов" />
+          <input type="text" id="deliveryName" />
           <label>Адрес доставки:</label>
-          <input
-            id="deliveryAddress"
-            type="text"
-            placeholder="г. Москва, ул. Ленина, д. 5"
-          />
+          <input type="text" id="deliveryAddress" />
           <label>Телефон:</label>
-          <input id="deliveryPhone" type="tel" placeholder="+79991234567" />
-          <button onclick="submitDelivery()">Далее</button>
-          <button onclick="showScreen('cartScreen')">Назад</button>
+          <input type="text" id="deliveryPhone" />
+          <button class="submit-btn" onclick="submitDelivery()">Далее</button>
+          <button class="back-btn" onclick="showScreen('cartScreen')">
+            Назад
+          </button>
         </div>
       </div>
 
+      <!-- Reviews Screen -->
       <div id="reviewsScreen" class="screen">
         <h2>Отзывы</h2>
-        <div id="reviews"></div>
+        <div id="reviews" class="reviews"></div>
       </div>
 
-      <div id="filtersScreen" class="screen">
+      <!-- Filter Screen -->
+      <div id="filterScreen" class="screen">
         <h2>Фильтры</h2>
         <div class="filters">
           <div class="filter-group">
@@ -92,8 +99,8 @@
           </div>
           <div class="filter-group">
             <h3>Цена</h3>
-            <input id="minPrice" type="number" placeholder="Мин. цена" />
-            <input id="maxPrice" type="number" placeholder="Макс. цена" />
+            <input type="number" id="minPrice" placeholder="Мин. цена" />
+            <input type="number" id="maxPrice" placeholder="Макс. цена" />
           </div>
           <div class="filter-group">
             <h3>Состояние</h3>
@@ -119,74 +126,73 @@
             >
           </div>
           <div class="filter-actions">
-            <button class="apply-btn">Применить</button>
-            <button class="reset-btn">Сбросить</button>
+            <button class="apply-btn" onclick="applyFilters()">
+              Применить
+            </button>
+            <button class="reset-btn" onclick="resetFilters()">Сбросить</button>
           </div>
         </div>
       </div>
 
+      <!-- Admin Screen -->
       <div id="adminScreen" class="screen">
-        <h2>Администратор</h2>
         <div id="adminLogin" class="admin-section">
           <h3>Введите пароль</h3>
-          <input id="adminPassword" type="password" placeholder="Пароль" />
+          <input type="password" id="adminPassword" />
           <button onclick="checkAdminPassword()">Войти</button>
         </div>
         <div id="adminContent" class="admin-section" style="display: none">
           <h3>Добавить товар</h3>
-          <input id="newProductName" type="text" placeholder="Название" />
-          <input id="newProductCategory" type="text" placeholder="Категория" />
+          <input type="text" id="newProductName" placeholder="Название" />
+          <input type="text" id="newProductCategory" placeholder="Категория" />
           <input
-            id="newProductSizes"
             type="text"
+            id="newProductSizes"
             placeholder="Размеры (через запятую)"
           />
-          <input id="newProductPrice" type="number" placeholder="Цена" />
+          <input type="number" id="newProductPrice" placeholder="Цена" />
           <input
+            type="text"
             id="newProductYear"
-            type="number"
             placeholder="Год (опционально)"
           />
           <input
-            id="newProductBlank"
             type="text"
+            id="newProductBlank"
             placeholder="Бланк (опционально)"
           />
-          <input
-            id="newProductCondition"
-            type="number"
-            placeholder="Состояние (1-5)"
-          />
-          <input id="newProductImage" type="file" multiple />
+          <input type="number" id="newProductCondition placeholder="Состояние
+          (1-5)" />
+          <input type="file" id="newProductImage" accept="image/*" multiple />
           <button onclick="addProduct()">Добавить товар</button>
         </div>
         <div id="editProductForm" class="admin-section" style="display: none">
           <h3>Редактировать товар</h3>
-          <input id="editProductIndex" type="hidden" />
-          <input id="editProductName" type="text" placeholder="Название" />
-          <input id="editProductCategory" type="text" placeholder="Категория" />
+          <input type="hidden" id="editProductIndex" />
+          <input type="text" id="editProductName" placeholder="Название" />
+          <input type="text" id="editProductCategory" placeholder="Категория" />
           <input
-            id="editProductSizes"
             type="text"
+            id="editProductSizes"
             placeholder="Размеры (через запятую)"
           />
-          <input id="editProductPrice" type="number" placeholder="Цена" />
+          <input type="number" id="editProductPrice" placeholder="Цена" />
           <input
+            type="text"
             id="editProductYear"
-            type="number"
             placeholder="Год (опционально)"
           />
           <input
-            id="editProductBlank"
             type="text"
+            id="editProductBlank"
             placeholder="Бланк (опционально)"
           />
           <input
-            id="editProductCondition"
             type="number"
+            id="editProductCondition"
             placeholder="Состояние (1-5)"
           />
-          <input id="editProductImage" type="file" multiple />
+          <input type="file" id="editProductImage" accept="image/*" multiple />
           <button onclick="updateProduct()">Сохранить изменения</button>
           <button onclick="cancelEditProduct()">Отмена</button>
         </div>
@@ -195,14 +201,14 @@
           <div id="productList"></div>
         </div>
       </div>
-    </div>
 
-    <div id="bottomNav" class="bottom-nav">
-      <button onclick="showScreen('catalogScreen')">📋</button>
-      <button onclick="showScreen('cartScreen')">🛒</button>
-      <button onclick="showScreen('reviewsScreen')">💬</button>
+      <!-- Bottom Navigation -->
+      <div id="bottomNav" class="bottom-nav">
+        <button onclick="showScreen('catalogScreen')">📋</button>
+        <button onclick="showScreen('cartScreen')">🛒</button>
+        <button onclick="showScreen('reviewsScreen')">💬</button>
+      </div>
     </div>
-
-    <script type="module" src="js/main.js"></script>
+    <script src="scripts.js"></script>
   </body>
 </html>
