@@ -1,25 +1,27 @@
 const { Telegraf } = require("telegraf");
 const axios = require("axios");
+const FormData = require("form-data");
 require("dotenv").config();
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const userStates = {};
 
-const notifySubscribers = async (product) => {
+async function notifySubscribers(product) {
   try {
-    const { data: subscribers } = await axios.get(
+    const response = await axios.get(
       "https://shroud.onrender.com/api/subscribers"
     );
-    for (const { userId } of subscribers) {
+    const subscribers = response.data;
+    for (const subscriber of subscribers) {
       await bot.telegram.sendMessage(
-        userId,
+        subscriber.userId,
         `Новое поступление "${product.category}" "${product.name}"`
       );
     }
   } catch (error) {
     console.error("Error sending notifications:", error.message);
   }
-};
+}
 
 bot.start((ctx) => {
   ctx.reply("Добро пожаловать в магазин мерча! 😎", {
@@ -48,11 +50,12 @@ bot.action("leave_review", (ctx) => {
 
 bot.action("subscribe", async (ctx) => {
   try {
-    const { data: subscribers } = await axios.get(
+    const response = await axios.get(
       "https://shroud.onrender.com/api/subscribers"
     );
-    if (subscribers.some((sub) => sub.userId === ctx.from.id)) {
-      return ctx.reply("Вы уже подписаны на рассылку! 📬");
+    if (response.data.some((sub) => sub.userId === ctx.from.id)) {
+      ctx.reply("Вы уже подписаны на рассылку! 📬");
+      return;
     }
     await axios.post("https://shroud.onrender.com/api/subscribers", {
       userId: ctx.from.id,
@@ -116,8 +119,10 @@ bot.action(/reject_review_(.+)/, async (ctx) => {
 bot.action("payment_confirmed", async (ctx) => {
   const userId = ctx.from.id;
   const orderData = userStates[userId]?.orderData;
-  if (!orderData) return ctx.reply("Ошибка: данные заказа не найдены.");
-
+  if (!orderData) {
+    ctx.reply("Ошибка: данные заказа не найдены.");
+    return;
+  }
   try {
     let message = `Новый заказ:\nПокупатель: ${
       ctx.from.username ? "@" + ctx.from.username : "Аноним"
@@ -131,13 +136,15 @@ bot.action("payment_confirmed", async (ctx) => {
     message += `\nИтого: ${orderData.total}₽`;
     await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, message);
 
+    // Удаление купленных товаров или размеров
     for (const item of orderData.items) {
-      const { data: products } = await axios.get(
-        "https://shroud.onrender.com/api/products"
+      const productResponse = await axios.get(
+        `https://shroud.onrender.com/api/products`
       );
-      const product = products.find((p) => p.name === item.name);
+      const product = productResponse.data.find((p) => p.name === item.name);
       if (product) {
         if (product.size.length > 1) {
+          // Удаляем только размер
           const newSizes = product.size.filter((size) => size !== item.size);
           await axios.put(
             `https://shroud.onrender.com/api/products/${product._id}`,
@@ -149,9 +156,11 @@ bot.action("payment_confirmed", async (ctx) => {
               condition: product.condition,
               year: product.year,
               blank: product.blank,
-            }
+            },
+            { headers: { "Content-Type": "multipart/form-data" } }
           );
         } else {
+          // Удаляем товар полностью, если был только один размер
           await axios.delete(
             `https://shroud.onrender.com/api/products/${product._id}`
           );
@@ -170,19 +179,25 @@ bot.action("payment_confirmed", async (ctx) => {
 
 bot.on("photo", async (ctx) => {
   const userId = ctx.from.id;
-  if (userStates[userId]?.state !== "waiting_for_photo") return;
-
-  try {
-    const photo = ctx.message.photo.slice(-1)[0];
-    const fileUrl = await bot.telegram.getFileLink(photo.file_id);
-    const { data } = await axios.get(fileUrl, { responseType: "arraybuffer" });
-    userStates[userId].photos.push(
-      `data:image/jpeg;base64,${Buffer.from(data).toString("base64")}`
-    );
-    ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
-  } catch (error) {
-    console.error("Error processing photo:", error.message);
-    ctx.reply("Ошибка при загрузке фото.");
+  const state = userStates[userId]?.state;
+  if (state === "waiting_for_photo") {
+    try {
+      const photos = ctx.message.photo;
+      for (const photo of photos.slice(-1)) {
+        const fileUrl = await bot.telegram.getFileLink(photo.file_id);
+        const response = await axios.get(fileUrl, {
+          responseType: "arraybuffer",
+        });
+        const base64String = `data:image/jpeg;base64,${Buffer.from(
+          response.data
+        ).toString("base64")}`;
+        userStates[userId].photos.push(base64String);
+      }
+      ctx.reply("Фото добавлено. Пришлите ещё или напишите 'Готово'.");
+    } catch (error) {
+      console.error("Error processing photo:", error.message);
+      ctx.reply("Ошибка при загрузке фото.");
+    }
   }
 });
 
@@ -190,14 +205,13 @@ bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
   const text = ctx.message.text.trim().toLowerCase();
-
   if (state === "waiting_for_review" && text !== "готово") {
     try {
       const review = {
         username: ctx.from.username || ctx.from.first_name || "Аноним",
         text: ctx.message.text,
       };
-      const { data: savedReview } = await axios.post(
+      const response = await axios.post(
         "https://shroud.onrender.com/api/reviews",
         review
       );
@@ -214,11 +228,11 @@ bot.on("text", async (ctx) => {
               [
                 {
                   text: "Одобрить",
-                  callback_data: `approve_review_${savedReview._id}`,
+                  callback_data: `approve_review_${response.data._id}`,
                 },
                 {
                   text: "Отклонить",
-                  callback_data: `reject_review_${savedReview._id}`,
+                  callback_data: `reject_review_${response.data._id}`,
                 },
               ],
             ],
@@ -226,11 +240,11 @@ bot.on("text", async (ctx) => {
         }
       );
       ctx.reply("Спасибо за ваш отзыв! Он будет опубликован после проверки.");
-      delete userStates[userId];
     } catch (error) {
       console.error("Error saving review:", error.message);
       ctx.reply("Ошибка при отправке отзыва.");
     }
+    delete userStates[userId];
   } else if (state === "waiting_for_photo" && text === "готово") {
     if (userStates[userId].photos.length === 0) {
       ctx.reply("Вы не добавили ни одного фото.");
@@ -266,7 +280,7 @@ bot.on("text", async (ctx) => {
       if (userStates[userId].photos.length > 0) {
         const mediaGroup = userStates[userId].photos.map((photo, index) => ({
           type: "photo",
-          media: photo,
+          media: { source: Buffer.from(photo.split(",")[1], "base64") },
           caption: index === 0 ? caption : undefined,
         }));
         await bot.telegram.sendMediaGroup(
@@ -277,43 +291,45 @@ bot.on("text", async (ctx) => {
         await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, caption);
       }
       ctx.reply("Анкета принята на рассмотрение!");
-      delete userStates[userId];
     } catch (error) {
       console.error("Error submitting form:", error.message);
       ctx.reply("Ошибка при отправке анкеты.");
     }
+    delete userStates[userId];
   }
 });
 
 bot.on("message", async (ctx) => {
-  if (!ctx.message.web_app_data) return;
-
-  try {
-    const data = JSON.parse(ctx.message.web_app_data.data);
-    if (data.action !== "requestPayment") return;
-
-    const { total, delivery, items } = data;
-    userStates[ctx.from.id] = { state: "waiting_for_payment", orderData: data };
-
-    let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
-    message += `Имя получателя: Иван Иванов\nБанк: Сбербанк\n`;
-    message += `После оплаты нажмите "Я оплатил".\n\nДетали заказа:\n`;
-    items.forEach((item, index) => {
-      message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
-        item.price
-      }₽\n`;
-    });
-    message += `\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\nИтого: ${total}₽`;
-    await ctx.reply(message, {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
-        ],
-      },
-    });
-  } catch (error) {
-    console.error("Error processing web app data:", error.message);
-    ctx.reply("Ошибка при обработке заказа.");
+  if (ctx.message.web_app_data) {
+    try {
+      const data = JSON.parse(ctx.message.web_app_data.data);
+      if (data.action === "requestPayment") {
+        const { total, delivery, items } = data;
+        userStates[ctx.from.id] = {
+          state: "waiting_for_payment",
+          orderData: data,
+        };
+        let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
+        message += `Имя получателя: Иван Иванов\nБанк: Сбербанк\n`;
+        message += `После оплаты нажмите "Я оплатил".\n\nДетали заказа:\n`;
+        items.forEach((item, index) => {
+          message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
+            item.price
+          }₽\n`;
+        });
+        message += `\nФИО: ${delivery.name}\nАдрес: ${delivery.address}\nТелефон: ${delivery.phone}\nИтого: ${total}₽`;
+        await ctx.reply(message, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
+            ],
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error processing web app data:", error.message);
+      ctx.reply("Ошибка при обработке заказа.");
+    }
   }
 });
 
