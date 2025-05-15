@@ -38,7 +38,7 @@ function renderCatalog(filteredProducts = products) {
         "★".repeat(product.condition) + "☆".repeat(5 - product.condition)
       }</div>
     `;
-    productDiv.onclick = () => showProductPage(product.id);
+    productDiv.addEventListener("click", () => showProductPage(product.id));
     catalogDiv.appendChild(productDiv);
   });
 }
@@ -145,8 +145,8 @@ function showProductPage(productId) {
   productPageDiv.innerHTML = `
     <div class="product-image">
       <img src="${imageUrl}" alt="${product.name}" id="productImage">
-      <button class="arrow left" onclick="changeImage(-1)">⬅</button>
-      <button class="arrow right" onclick="changeImage(1)">➡</button>
+      <button class="arrow left">⬅</button>
+      <button class="arrow right">➡</button>
     </div>
     <div class="product-details">
       <h2>${product.name}</h2>
@@ -155,15 +155,23 @@ function showProductPage(productId) {
       ${blankDisplay}
       <p>Размер: ${sizeOptions}</p>
       <p>Цена: ${product.price}₽</p>
-      <button class="add-to-cart-btn" onclick="addToCart(${
-        product.id
-      })">ДОБАВИТЬ В КОРЗИНУ</button>
+      <button class="add-to-cart-btn">ДОБАВИТЬ В КОРЗИНУ</button>
       <p>Состояние:</p>
       <div class="stars">${
         "★".repeat(product.condition) + "☆".repeat(5 - product.condition)
       }</div>
     </div>
   `;
+
+  // Добавляем слушатели событий для кнопок
+  const leftArrow = productPageDiv.querySelector(".arrow.left");
+  const rightArrow = productPageDiv.querySelector(".arrow.right");
+  const addToCartBtn = productPageDiv.querySelector(".add-to-cart-btn");
+
+  leftArrow.addEventListener("click", () => changeImage(-1));
+  rightArrow.addEventListener("click", () => changeImage(1));
+  addToCartBtn.addEventListener("click", () => addToCart(product.id));
+
   window.showScreen("productScreen");
 }
 
@@ -212,12 +220,10 @@ export {
   resetFilters,
 };
 
-// Глобальная доступность
+// Глобальная доступность (уже не требуется для этих функций, но оставим для совместимости)
 window.initCatalog = initCatalog;
 window.renderCatalog = renderCatalog;
 window.filterProducts = filterProducts;
 window.applyFilters = applyFilters;
 window.resetFilters = resetFilters;
-window.showProductPage = showProductPage;
-window.changeImage = changeImage;
-window.addToCart = addToCart;
+Cart;
