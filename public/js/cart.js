@@ -1,10 +1,8 @@
-import { showNotification, showScreen } from "./utils.js";
+let cart = [];
+let pendingPurchase = null;
+let deliveryData = null;
 
-export let cart = [];
-export let pendingPurchase = null;
-export let deliveryData = null;
-
-export function renderCart() {
+function renderCart() {
   const cartDiv = document.getElementById("cart");
   cartDiv.innerHTML = cart.length === 0 ? "<p>Корзина пуста</p>" : "";
   cart.forEach((item, index) => {
@@ -26,32 +24,32 @@ export function renderCart() {
   });
 }
 
-export function removeFromCart(index) {
+function removeFromCart(index) {
   cart.splice(index, 1);
   renderCart();
-  showNotification("Товар удалён из корзины!");
+  window.showNotification("Товар удалён из корзины!");
 }
 
-export function buyItem(index) {
+function buyItem(index) {
   pendingPurchase = [cart[index]];
-  showScreen("deliveryScreen");
+  window.showScreen("deliveryScreen");
 }
 
-export function buyAll() {
+function buyAll() {
   if (cart.length === 0) {
-    showNotification("Корзина пуста!");
+    window.showNotification("Корзина пуста!");
     return;
   }
   pendingPurchase = [...cart];
-  showScreen("deliveryScreen");
+  window.showScreen("deliveryScreen");
 }
 
-export function submitDelivery() {
+function submitDelivery() {
   const name = document.getElementById("deliveryName")?.value;
   const address = document.getElementById("deliveryAddress")?.value;
   const phone = document.getElementById("deliveryPhone")?.value;
   if (!name || !address || !phone) {
-    showNotification("Заполните все поля!");
+    window.showNotification("Заполните все поля!");
     return;
   }
   deliveryData = { name, address, phone };
@@ -61,8 +59,8 @@ export function submitDelivery() {
     size: item.selectedSize || "Без размера",
     price: item.price,
   }));
-  if (tg.sendData) {
-    tg.sendData(
+  if (window.tg?.sendData) {
+    window.tg.sendData(
       JSON.stringify({
         action: "requestPayment",
         total,
@@ -71,6 +69,30 @@ export function submitDelivery() {
       })
     );
   } else {
-    showNotification("Ошибка: Отправка данных доступна только в Telegram.");
+    window.showNotification(
+      "Ошибка: Отправка данных доступна только в Telegram."
+    );
   }
 }
+
+// Экспорт для других модулей
+export {
+  cart,
+  pendingPurchase,
+  deliveryData,
+  renderCart,
+  removeFromCart,
+  buyItem,
+  buyAll,
+  submitDelivery,
+};
+
+// Глобальная доступность
+window.cart = cart;
+window.pendingPurchase = pendingPurchase;
+window.deliveryData = deliveryData;
+window.renderCart = renderCart;
+window.removeFromCart = removeFromCart;
+window.buyItem = buyItem;
+window.buyAll = buyAll;
+window.submitDelivery = submitDelivery;

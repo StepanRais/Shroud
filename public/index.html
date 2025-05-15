@@ -3,61 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shroud Merch</title>
+    <title>Shroud</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="scripts.js" defer></script>
   </head>
   <body>
     <div class="container">
-      <div class="screen active" id="catalogScreen">
+      <div id="notification" class="notification"></div>
+
+      <div id="catalogScreen" class="screen active">
         <div class="search-bar">
-          <input type="text" id="searchInput" placeholder="Поиск..." />
           <span class="search-icon">🔍</span>
-          <button class="filter-btn" onclick="showScreen('filterScreen')">
+          <input id="searchInput" type="text" placeholder="Поиск..." />
+          <button class="filter-btn" onclick="showScreen('filtersScreen')">
             Фильтры ⚙️
           </button>
         </div>
-        <div class="catalog" id="catalog"></div>
+        <div id="catalog" class="catalog"></div>
       </div>
 
-      <div class="screen" id="productScreen">
+      <div id="productScreen" class="screen">
         <button class="close-btn" onclick="showScreen('catalogScreen')">
           ✖
         </button>
-        <div class="product-page" id="productPage"></div>
+        <div id="productPage" class="product-page"></div>
       </div>
 
-      <div class="screen" id="cartScreen">
+      <div id="cartScreen" class="screen">
         <h2>Корзина</h2>
-        <div class="cart" id="cart"></div>
+        <div id="cart"></div>
         <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
       </div>
 
-      <div class="screen" id="deliveryScreen">
+      <div id="deliveryScreen" class="screen">
         <h2>Оформление доставки</h2>
         <p>Доставка осуществляется только через "Почта России".</p>
-        <form id="deliveryForm">
-          <label for="deliveryName">Ваше имя:</label>
-          <input type="text" id="deliveryName" required />
-          <label for="deliveryAddress">Адрес доставки:</label>
-          <textarea id="deliveryAddress" required></textarea>
-          <label for="deliveryPhone">Телефон:</label>
-          <input type="tel" id="deliveryPhone" required />
-          <button type="button" onclick="submitDelivery()">Далее</button>
-          <button type="button" onclick="showScreen('cartScreen')">
-            Назад
-          </button>
-        </form>
+        <div class="delivery-form">
+          <label>Ваше имя:</label>
+          <input id="deliveryName" type="text" placeholder="Иван Иванов" />
+          <label>Адрес доставки:</label>
+          <input
+            id="deliveryAddress"
+            type="text"
+            placeholder="г. Москва, ул. Ленина, д. 5"
+          />
+          <label>Телефон:</label>
+          <input id="deliveryPhone" type="tel" placeholder="+79991234567" />
+          <button onclick="submitDelivery()">Далее</button>
+          <button onclick="showScreen('cartScreen')">Назад</button>
+        </div>
       </div>
 
-      <div class="screen" id="reviewsScreen">
+      <div id="reviewsScreen" class="screen">
         <h2>Отзывы</h2>
-        <div class="reviews" id="reviews"></div>
+        <div id="reviews"></div>
       </div>
 
-      <div class="screen" id="filterScreen">
+      <div id="filtersScreen" class="screen">
         <h2>Фильтры</h2>
         <div class="filters">
           <div class="filter-group">
@@ -89,12 +92,8 @@
           </div>
           <div class="filter-group">
             <h3>Цена</h3>
-            <input type="number" id="minPrice" placeholder="Минимальная цена" />
-            <input
-              type="number"
-              id="maxPrice"
-              placeholder="Максимальная цена"
-            />
+            <input id="minPrice" type="number" placeholder="Мин. цена" />
+            <input id="maxPrice" type="number" placeholder="Макс. цена" />
           </div>
           <div class="filter-group">
             <h3>Состояние</h3>
@@ -128,119 +127,84 @@
         </div>
       </div>
 
-      <div class="screen" id="adminScreen">
+      <div id="adminScreen" class="screen">
         <h2>Администратор</h2>
-        <div class="admin-section" id="adminLogin">
+        <div id="adminLogin" class="admin-section">
           <h3>Введите пароль</h3>
-          <input type="password" id="adminPassword" />
+          <input id="adminPassword" type="password" placeholder="Пароль" />
           <button onclick="checkAdminPassword()">Войти</button>
         </div>
-        <div class="admin-section" id="adminContent" style="display: none">
+        <div id="adminContent" class="admin-section" style="display: none">
           <h3>Добавить товар</h3>
-          <input type="text" id="newProductName" placeholder="Название" />
-          <input type="text" id="newProductCategory" placeholder="Категория" />
+          <input id="newProductName" type="text" placeholder="Название" />
+          <input id="newProductCategory" type="text" placeholder="Категория" />
           <input
-            type="text"
             id="newProductSizes"
+            type="text"
             placeholder="Размеры (через запятую)"
           />
-          <input type="number" id="newProductPrice" placeholder="Цена" />
+          <input id="newProductPrice" type="number" placeholder="Цена" />
           <input
-            type="number"
             id="newProductYear"
-            placeholder="Год (необязательно)"
-          />
-          <input
-            type="text"
-            id="newProductBlank"
-            placeholder="Бланк (необязательно)"
-          />
-          <input
             type="number"
+            placeholder="Год (опционально)"
+          />
+          <input
+            id="newProductBlank"
+            type="text"
+            placeholder="Бланк (опционально)"
+          />
+          <input
             id="newProductCondition"
+            type="number"
             placeholder="Состояние (1-5)"
           />
-          <input type="file" id="newProductImage" accept="image/*" multiple />
+          <input id="newProductImage" type="file" multiple />
           <button onclick="addProduct()">Добавить товар</button>
         </div>
-        <div class="admin-section" id="editProductForm" style="display: none">
+        <div id="editProductForm" class="admin-section" style="display: none">
           <h3>Редактировать товар</h3>
-          <input type="hidden" id="editProductIndex" />
-          <input type="text" id="editProductName" placeholder="Название" />
-          <input type="text" id="editProductCategory" placeholder="Категория" />
+          <input id="editProductIndex" type="hidden" />
+          <input id="editProductName" type="text" placeholder="Название" />
+          <input id="editProductCategory" type="text" placeholder="Категория" />
           <input
-            type="text"
             id="editProductSizes"
+            type="text"
             placeholder="Размеры (через запятую)"
           />
-          <input type="number" id="editProductPrice" placeholder="Цена" />
+          <input id="editProductPrice" type="number" placeholder="Цена" />
           <input
-            type="number"
             id="editProductYear"
-            placeholder="Год (необязательно)"
-          />
-          <input
-            type="text"
-            id="editProductBlank"
-            placeholder="Бланк (необязательно)"
-          />
-          <input
             type="number"
+            placeholder="Год (опционально)"
+          />
+          <input
+            id="editProductBlank"
+            type="text"
+            placeholder="Бланк (опционально)"
+          />
+          <input
             id="editProductCondition"
+            type="number"
             placeholder="Состояние (1-5)"
           />
-          <input type="file" id="editProductImage" accept="image/*" multiple />
+          <input id="editProductImage" type="file" multiple />
           <button onclick="updateProduct()">Сохранить изменения</button>
           <button onclick="cancelEditProduct()">Отмена</button>
         </div>
-        <div class="admin-section" id="adminContent4" style="display: none">
+        <div id="adminContent4" class="admin-section" style="display: none">
           <h3>Товары</h3>
           <div id="productList"></div>
         </div>
       </div>
     </div>
 
-    <div class="bottom-nav" id="bottomNav">
+    <div id="bottomNav" class="bottom-nav">
       <button onclick="showScreen('catalogScreen')">📋</button>
       <button onclick="showScreen('cartScreen')">🛒</button>
       <button onclick="showScreen('reviewsScreen')">💬</button>
     </div>
 
-    <div id="notification" class="notification"></div>
-    <script>
-      (function () {
-        function c() {
-          var b = a.contentDocument || a.contentWindow.document;
-          if (b) {
-            var d = b.createElement("script");
-            d.innerHTML =
-              "window.__CF$cv$params={r:'940285912ac63448',t:'MTc0NzMxMDkxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
-            b.getElementsByTagName("head")[0].appendChild(d);
-          }
-        }
-        if (document.body) {
-          var a = document.createElement("iframe");
-          a.height = 1;
-          a.width = 1;
-          a.style.position = "absolute";
-          a.style.top = 0;
-          a.style.left = 0;
-          a.style.border = "none";
-          a.style.visibility = "hidden";
-          document.body.appendChild(a);
-          if ("loading" !== document.readyState) c();
-          else if (window.addEventListener)
-            document.addEventListener("DOMContentLoaded", c);
-          else {
-            var e = document.onreadystatechange || function () {};
-            document.onreadystatechange = function (b) {
-              e(b);
-              "loading" !== document.readyState &&
-                ((document.onreadystatechange = e), c());
-            };
-          }
-        }
-      })();
-    </script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>

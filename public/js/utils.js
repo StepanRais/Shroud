@@ -16,3 +16,7 @@ export function showScreen(screenId) {
   const targetScreen = document.getElementById(screenId);
   if (targetScreen) targetScreen.classList.add("active");
 }
+
+// Делаем функции глобально доступными для inline-обработчиков
+window.showNotification = showNotification;
+window.showScreen = showScreen;

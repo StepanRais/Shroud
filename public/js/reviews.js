@@ -1,14 +1,13 @@
-import axios from "axios";
-import { showNotification } from "./utils.js";
+import axios from "https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js";
 
 let reviews = [];
 
-export async function initReviews() {
+async function initReviews() {
   const { data } = await axios.get("https://shroud.onrender.com/api/reviews");
   reviews = data;
 }
 
-export function renderReviews() {
+function renderReviews() {
   const reviewsDiv = document.getElementById("reviews");
   reviewsDiv.innerHTML = "";
   reviews.forEach((review, index) => {
@@ -18,7 +17,7 @@ export function renderReviews() {
       <h3>${review.username}</h3>
       <p>${review.text}</p>
       ${
-        isAdminAuthenticated
+        window.isAdminAuthenticated
           ? `<button class="delete-btn" onclick="deleteReview(${index})">✖</button>`
           : ""
       }
@@ -27,16 +26,24 @@ export function renderReviews() {
   });
 }
 
-export async function deleteReview(index) {
+async function deleteReview(index) {
   try {
     await axios.delete(
       `https://shroud.onrender.com/api/reviews/${reviews[index]._id}`
     );
     reviews.splice(index, 1);
     renderReviews();
-    showNotification("Отзыв удалён!");
+    window.showNotification("Отзыв удалён!");
   } catch (error) {
     console.error("Error deleting review:", error.message);
-    showNotification("Ошибка при удалении отзыва.");
+    window.showNotification("Ошибка при удалении отзыва.");
   }
 }
+
+// Экспорт для других модулей
+export { initReviews, renderReviews, deleteReview };
+
+// Глобальная доступность
+window.initReviews = initReviews;
+window.renderReviews = renderReviews;
+window.deleteReview = deleteReview;

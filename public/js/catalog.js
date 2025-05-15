@@ -1,6 +1,6 @@
-import axios from "axios";
-import { showNotification, showScreen } from "./utils.js";
+import axios from "https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js";
 
+// Глобальные переменные
 let products = [];
 let currentFilters = {
   categories: [],
@@ -11,12 +11,12 @@ let currentFilters = {
 };
 let currentImageIndex = 0;
 
-export async function initCatalog() {
+async function initCatalog() {
   const { data } = await axios.get("https://shroud.onrender.com/api/products");
   products = data;
 }
 
-export function renderCatalog(filteredProducts = products) {
+function renderCatalog(filteredProducts = products) {
   const catalogDiv = document.getElementById("catalog");
   catalogDiv.innerHTML = "";
   filteredProducts.forEach((product) => {
@@ -43,7 +43,7 @@ export function renderCatalog(filteredProducts = products) {
   });
 }
 
-export function filterProducts() {
+function filterProducts() {
   let filteredProducts = products;
   if (currentFilters.categories.length > 0) {
     const mainCategories = ["Футболка", "Лонгслив", "Худи"];
@@ -85,7 +85,7 @@ export function filterProducts() {
   return filteredProducts;
 }
 
-export function applyFilters() {
+function applyFilters() {
   currentFilters.categories = Array.from(
     document.querySelectorAll('input[name="category"]:checked')
   ).map((cb) => cb.value);
@@ -100,10 +100,10 @@ export function applyFilters() {
     document.querySelectorAll('input[name="condition"]:checked')
   ).map((cb) => cb.value);
   renderCatalog(filterProducts());
-  showScreen("catalogScreen");
+  window.showScreen("catalogScreen");
 }
 
-export function resetFilters() {
+function resetFilters() {
   currentFilters = {
     categories: [],
     sizes: [],
@@ -123,7 +123,7 @@ export function resetFilters() {
     .querySelectorAll('input[name="condition"]')
     .forEach((cb) => (cb.checked = false));
   renderCatalog();
-  showScreen("catalogScreen");
+  window.showScreen("catalogScreen");
 }
 
 function showProductPage(productId) {
@@ -164,7 +164,7 @@ function showProductPage(productId) {
       }</div>
     </div>
   `;
-  showScreen("productScreen");
+  window.showScreen("productScreen");
 }
 
 function changeImage(direction) {
@@ -178,12 +178,12 @@ function changeImage(direction) {
     product.images[currentImageIndex] || "https://via.placeholder.com/150";
 }
 
-export async function addToCart(productId) {
+async function addToCart(productId) {
   const product = products.find((p) => p.id === productId);
   const sizeSelect = document.getElementById("sizeSelect");
   const selectedSize = sizeSelect ? sizeSelect.value : null;
   try {
-    const userId = tg.initDataUnsafe.user?.id || 0;
+    const userId = window.tg?.initDataUnsafe?.user?.id || 0;
     const { data } = await axios.post(
       "https://shroud.onrender.com/api/products/reserve",
       {
@@ -193,12 +193,31 @@ export async function addToCart(productId) {
       }
     );
     if (data.message === "Product reserved") {
-      cart.push({ ...product, selectedSize });
-      renderCart();
-      showNotification("Товар добавлен в корзину!");
+      window.cart.push({ ...product, selectedSize });
+      window.renderCart();
+      window.showNotification("Товар добавлен в корзину!");
     }
   } catch (error) {
     console.error("Error reserving product:", error.message);
-    showNotification("Товар уже зарезервирован или недоступен.");
+    window.showNotification("Товар уже зарезервирован или недоступен.");
   }
 }
+
+// Экспорт для других модулей
+export {
+  initCatalog,
+  renderCatalog,
+  filterProducts,
+  applyFilters,
+  resetFilters,
+};
+
+// Глобальная доступность
+window.initCatalog = initCatalog;
+window.renderCatalog = renderCatalog;
+window.filterProducts = filterProducts;
+window.applyFilters = applyFilters;
+window.resetFilters = resetFilters;
+window.showProductPage = showProductPage;
+window.changeImage = changeImage;
+window.addToCart = addToCart;

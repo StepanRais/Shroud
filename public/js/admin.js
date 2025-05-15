@@ -1,15 +1,14 @@
-import axios from "axios";
-import { showNotification, renderCatalog, filterProducts } from "./catalog.js";
-import { showScreen } from "./utils.js";
+import axios from "https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js";
 
 let products = [];
 let isAdminAuthenticated = false;
 
-export async function initAdmin() {
-  products = (await axios.get("https://shroud.onrender.com/api/products")).data;
+async function initAdmin() {
+  const { data } = await axios.get("https://shroud.onrender.com/api/products");
+  products = data;
 }
 
-export function renderAdmin() {
+function renderAdmin() {
   if (!isAdminAuthenticated) return;
   const productListDiv = document.getElementById("productList");
   productListDiv.innerHTML = "";
@@ -26,7 +25,7 @@ export function renderAdmin() {
   });
 }
 
-export async function checkAdminPassword() {
+async function checkAdminPassword() {
   const password = document.getElementById("adminPassword").value;
   if (password === "admin123") {
     isAdminAuthenticated = true;
@@ -34,13 +33,13 @@ export async function checkAdminPassword() {
     document.getElementById("adminContent").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
     await initAdmin();
-    showNotification("Доступ открыт!");
+    window.showNotification("Доступ открыт!");
   } else {
-    showNotification("Неверный пароль!");
+    window.showNotification("Неверный пароль!");
   }
 }
 
-export async function addProduct() {
+async function addProduct() {
   if (!isAdminAuthenticated) return;
   const name = document.getElementById("newProductName")?.value;
   const category = document.getElementById("newProductCategory")?.value;
@@ -90,7 +89,7 @@ export async function addProduct() {
       );
       products.push(data);
       await axios.post("https://shroud.onrender.com/notify", data);
-      showNotification("Товар добавлен!");
+      window.showNotification("Товар добавлен!");
       document.getElementById("newProductName").value = "";
       document.getElementById("newProductCategory").value = "";
       document.getElementById("newProductSizes").value = "";
@@ -100,17 +99,19 @@ export async function addProduct() {
       document.getElementById("newProductCondition").value = "";
       imageInput.value = "";
       renderAdmin();
-      renderCatalog(filterProducts());
+      window.renderCatalog(window.filterProducts());
     } catch (error) {
       console.error("Error adding product:", error.message);
-      showNotification("Ошибка при добавлении товара.");
+      window.showNotification("Ошибка при добавлении товара.");
     }
   } else {
-    showNotification("Заполните все обязательные поля! Состояние от 1 до 5.");
+    window.showNotification(
+      "Заполните все обязательные поля! Состояние от 1 до 5."
+    );
   }
 }
 
-export function editProduct(index) {
+function editProduct(index) {
   const product = products[index];
   if (!product) return;
   document.getElementById("editProductIndex").value = index;
@@ -125,7 +126,7 @@ export function editProduct(index) {
   document.getElementById("editProductForm").style.display = "block";
 }
 
-export async function updateProduct() {
+async function updateProduct() {
   const index = Number(document.getElementById("editProductIndex")?.value);
   const product = products[index];
   if (!product) return;
@@ -172,25 +173,27 @@ export async function updateProduct() {
         }
       );
       products[index] = data;
-      showNotification("Товар обновлён!");
+      window.showNotification("Товар обновлён!");
       cancelEditProduct();
       renderAdmin();
-      renderCatalog(filterProducts());
+      window.renderCatalog(window.filterProducts());
     } catch (error) {
       console.error("Error updating product:", error.message);
-      showNotification("Ошибка при обновлении товара.");
+      window.showNotification("Ошибка при обновлении товара.");
     }
   } else {
-    showNotification("Заполните все обязательные поля! Состояние от 1 до 5.");
+    window.showNotification(
+      "Заполните все обязательные поля! Состояние от 1 до 5."
+    );
   }
 }
 
-export function cancelEditProduct() {
+function cancelEditProduct() {
   document.getElementById("adminContent").style.display = "block";
   document.getElementById("editProductForm").style.display = "none";
 }
 
-export async function deleteProduct(index) {
+async function deleteProduct(index) {
   const product = products[index];
   if (!product) return;
   try {
@@ -199,10 +202,32 @@ export async function deleteProduct(index) {
     );
     products.splice(index, 1);
     renderAdmin();
-    renderCatalog(filterProducts());
-    showNotification("Товар удалён!");
+    window.renderCatalog(window.filterProducts());
+    window.showNotification("Товар удалён!");
   } catch (error) {
     console.error("Error deleting product:", error.message);
-    showNotification("Ошибка при удалении товара.");
+    window.showNotification("Ошибка при удалении товара.");
   }
 }
+
+// Экспорт для других модулей
+export {
+  initAdmin,
+  renderAdmin,
+  checkAdminPassword,
+  addProduct,
+  editProduct,
+  updateProduct,
+  cancelEditProduct,
+  deleteProduct,
+};
+
+// Глобальная доступность
+window.initAdmin = initAdmin;
+window.renderAdmin = renderAdmin;
+window.checkAdminPassword = checkAdminPassword;
+window.addProduct = addProduct;
+window.editProduct = editProduct;
+window.updateProduct = updateProduct;
+window.cancelEditProduct = cancelEditProduct;
+window.deleteProduct = deleteProduct;
