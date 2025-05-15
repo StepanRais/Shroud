@@ -157,7 +157,7 @@ body {
 }
 
 .add-to-cart-btn {
-  background: #444; /* Заменён синий (#007bff) на временный тёмно-серый */
+  background: #007bff;
   color: #fff;
   border: none;
   padding: 10px;
@@ -206,8 +206,9 @@ body {
   gap: 5px;
 }
 
-.remove-btn {
-  background: #ff4d4d; /* Оставлен красный для удаления */
+.remove-btn,
+.buy-btn {
+  background: #007bff;
   color: #fff;
   border: none;
   padding: 5px 10px;
@@ -215,17 +216,12 @@ body {
   cursor: pointer;
 }
 
-.buy-btn {
-  background: #444; /* Заменён синий (#007bff) на временный тёмно-серый */
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
+.remove-btn {
+  background: #ff4d4d;
 }
 
 .buy-all-btn {
-  background: #444; /* Заменён синий (#007bff) на временный тёмно-серый */
+  background: #007bff;
   color: #fff;
   border: none;
   padding: 10px;
@@ -332,7 +328,7 @@ body {
 }
 
 .admin-section button {
-  background: #444; /* Заменён синий (#007bff) на временный тёмно-серый */
+  background: #007bff;
   color: #fff;
   border: none;
   padding: 10px;
@@ -359,8 +355,9 @@ body {
   margin: 5px 0;
 }
 
-.edit-btn {
-  background: #444; /* Заменён синий (#007bff) на временный тёмно-серый */
+.edit-btn,
+.delete-btn {
+  background: #007bff;
   color: #fff;
   border: none;
   padding: 5px 10px;
@@ -370,13 +367,7 @@ body {
 }
 
 .delete-btn {
-  background: #ff4d4d; /* Оставлен красный для удаления */
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-right: 5px;
+  background: #ff4d4d;
 }
 
 .bottom-nav {
