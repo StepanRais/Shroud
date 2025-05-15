@@ -337,22 +337,19 @@ body {
   margin-right: 10px;
 }
 
-.product-item,
-.review-item {
+.product-item {
   background: #f9f9f9;
   border-radius: 5px;
   padding: 10px;
   margin-bottom: 10px;
 }
 
-.product-item h4,
-.review-item h4 {
+.product-item h4 {
   font-size: 16px;
   margin: 0 0 5px;
 }
 
-.product-item p,
-.review-item p {
+.product-item p {
   font-size: 14px;
   color: #666;
   margin: 5px 0;

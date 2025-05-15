@@ -84,15 +84,9 @@ async function checkAdminPassword() {
   const correctPassword = "admin123";
   if (password === correctPassword) {
     isAdminAuthenticated = true;
-    document.getElementById("adminPassword").style.display = "none";
-    document.querySelector("#adminScreen .admin-section h3").style.display =
-      "none";
+    document.getElementById("adminLogin").style.display = "none";
     document.getElementById("adminContent").style.display = "block";
-    document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
-    document.getElementById("adminContent5").style.display = "block";
-    document.querySelector("#adminScreen .admin-section button").style.display =
-      "none"; // Скрываем кнопку "Войти"
     await loadData();
     showNotification("Доступ открыт!");
   } else {
@@ -391,9 +385,7 @@ function renderReviews() {
 function renderAdmin() {
   if (!isAdminAuthenticated) return;
   const productListDiv = document.getElementById("productList");
-  const reviewListDiv = document.getElementById("reviewList");
   productListDiv.innerHTML = "";
-  reviewListDiv.innerHTML = "";
   products.forEach((product, index) => {
     const productItemDiv = document.createElement("div");
     productItemDiv.className = "product-item";
@@ -406,17 +398,6 @@ function renderAdmin() {
       <button class="delete-btn" onclick="deleteProduct(${index})">✖</button>
     `;
     productListDiv.appendChild(productItemDiv);
-  });
-  reviews.forEach((review, index) => {
-    const reviewItemDiv = document.createElement("div");
-    reviewItemDiv.className = "review-item";
-    reviewItemDiv.innerHTML = `
-      <h4>${review.username}</h4>
-      <p>${review.text}</p>
-      <button class="edit-btn" onclick="editReview(${index})">✏️</button>
-      <button class="delete-btn" onclick="deleteReview(${index})">✖</button>
-    `;
-    reviewListDiv.appendChild(reviewItemDiv);
   });
 }
 
@@ -581,52 +562,12 @@ async function deleteProduct(index) {
   }
 }
 
-function editReview(index) {
-  const review = reviews[index];
-  if (!review) return;
-  document.getElementById("editReviewIndex").value = index;
-  document.getElementById("editReviewUsername").value = review.username;
-  document.getElementById("editReviewText").value = review.text;
-  document.getElementById("adminContent2").style.display = "none";
-  document.getElementById("editReviewForm").style.display = "block";
-}
-
-async function updateReview() {
-  const index = Number(document.getElementById("editReviewIndex")?.value);
-  const username = document.getElementById("editReviewUsername")?.value;
-  const text = document.getElementById("editReviewText")?.value;
-  if (username && text) {
-    try {
-      const response = await axios.put(
-        `https://shroud.onrender.com/api/reviews/${reviews[index]._id}`,
-        { username, text, approved: true }
-      );
-      reviews[index] = response.data;
-      showNotification("Отзыв обновлён!");
-      cancelEditReview();
-      renderAdmin();
-      renderReviews();
-    } catch (error) {
-      console.error("Error updating review:", error.message);
-      showNotification("Ошибка при обновлении отзыва.");
-    }
-  } else {
-    showNotification("Заполните все поля!");
-  }
-}
-
-function cancelEditReview() {
-  document.getElementById("adminContent2").style.display = "block";
-  document.getElementById("editReviewForm").style.display = "none";
-}
-
 async function deleteReview(index) {
   try {
     await axios.delete(
       `https://shroud.onrender.com/api/reviews/${reviews[index]._id}`
     );
     reviews.splice(index, 1);
-    renderAdmin();
     renderReviews();
     showNotification("Отзыв удалён!");
   } catch (error) {

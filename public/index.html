@@ -130,7 +130,7 @@
 
       <div class="screen" id="adminScreen">
         <h2>Администратор</h2>
-        <div class="admin-section">
+        <div class="admin-section" id="adminLogin">
           <h3>Введите пароль</h3>
           <input type="password" id="adminPassword" />
           <button onclick="checkAdminPassword()">Войти</button>
@@ -193,27 +193,9 @@
           <button onclick="updateProduct()">Сохранить изменения</button>
           <button onclick="cancelEditProduct()">Отмена</button>
         </div>
-        <div class="admin-section" id="adminContent2" style="display: none">
-          <h3>Редактировать отзыв</h3>
-          <div id="editReviewForm" style="display: none">
-            <input type="hidden" id="editReviewIndex" />
-            <input
-              type="text"
-              id="editReviewUsername"
-              placeholder="Имя пользователя"
-            />
-            <textarea id="editReviewText" placeholder="Текст отзыва"></textarea>
-            <button onclick="updateReview()">Сохранить изменения</button>
-            <button onclick="cancelEditReview()">Отмена</button>
-          </div>
-        </div>
         <div class="admin-section" id="adminContent4" style="display: none">
           <h3>Товары</h3>
           <div id="productList"></div>
-        </div>
-        <div class="admin-section" id="adminContent5" style="display: none">
-          <h3>Отзывы</h3>
-          <div id="reviewList"></div>
         </div>
       </div>
     </div>
