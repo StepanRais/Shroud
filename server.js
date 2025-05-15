@@ -7,7 +7,6 @@ const { notifySubscribers } = require("./bot/index.js");
 const multer = require("multer");
 const sharp = require("sharp");
 
-// Настройка multer для обработки файлов в памяти
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -19,13 +18,11 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Подключение к MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err.message));
 
-// Модели
 const ProductSchema = new mongoose.Schema({
   id: Number,
   name: String,
@@ -36,7 +33,7 @@ const ProductSchema = new mongoose.Schema({
   images: [String],
   category: String,
   condition: Number,
-  reservedBy: { type: Number, default: null }, // Для резерва товара
+  reservedBy: { type: Number, default: null },
 });
 
 const ReviewSchema = new mongoose.Schema({
@@ -64,7 +61,6 @@ const Review = mongoose.model("Review", ReviewSchema);
 const Subscriber = mongoose.model("Subscriber", SubscriberSchema);
 const Form = mongoose.model("Form", FormSchema);
 
-// Инициализация тестовых данных
 const initialSetup = async () => {
   try {
     const count = await Product.countDocuments();
@@ -100,7 +96,6 @@ const initialSetup = async () => {
   }
 };
 
-// Маршрут для загрузки фото
 app.post("/api/upload", upload.single("photo"), async (req, res) => {
   console.log("POST /api/upload called");
   if (!req.file) {
@@ -122,7 +117,6 @@ app.post("/api/upload", upload.single("photo"), async (req, res) => {
   }
 });
 
-// Проверка доступности товара
 app.post("/api/products/reserve", async (req, res) => {
   const { productId, size, userId } = req.body;
   try {
@@ -142,11 +136,11 @@ app.post("/api/products/reserve", async (req, res) => {
   }
 });
 
-// API для товаров
 app.get("/api/products", async (req, res) => {
   console.log("GET /api/products called");
   try {
-    const products = await Product.find({ reservedBy: null });
+    const products = await Product.find(); // Временно убрали фильтр reservedBy
+    console.log("Products fetched:", products);
     res.json(products);
   } catch (error) {
     console.error("Error fetching products:", error.message);
@@ -242,7 +236,6 @@ app.delete("/api/products/:id", async (req, res) => {
   }
 });
 
-// API для подписчиков
 app.get("/api/subscribers", async (req, res) => {
   console.log("GET /api/subscribers called");
   try {
@@ -282,7 +275,6 @@ app.delete("/api/subscribers/:userId", async (req, res) => {
   }
 });
 
-// API для анкет
 app.get("/api/forms", async (req, res) => {
   console.log("GET /api/forms called");
   try {
@@ -307,11 +299,11 @@ app.post("/api/forms", async (req, res) => {
   }
 });
 
-// API для отзывов
 app.get("/api/reviews", async (req, res) => {
   console.log("GET /api/reviews called");
   try {
     const reviews = await Review.find({ approved: true });
+    console.log("Reviews fetched:", reviews);
     res.json(reviews);
   } catch (error) {
     console.error("Error fetching reviews:", error.message);
@@ -362,7 +354,6 @@ app.put("/api/reviews/:id/approve", async (req, res) => {
   }
 });
 
-// Маршрут для уведомления подписчиков
 app.post("/notify", async (req, res) => {
   console.log("POST /notify called with product:", req.body);
   try {
@@ -375,13 +366,11 @@ app.post("/notify", async (req, res) => {
   }
 });
 
-// Маршрут для фронтенда
 app.get("/", (req, res) => {
   console.log("GET / called");
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Обработка всех остальных запросов фронтенда
 app.get("*", (req, res) => {
   console.log("GET * called for path:", req.path);
   if (req.path.startsWith("/api")) {

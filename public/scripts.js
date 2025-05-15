@@ -1,5 +1,12 @@
-const tg = window.Telegram.WebApp;
-tg.ready();
+let tg;
+try {
+  tg = window.Telegram.WebApp;
+  tg.ready();
+} catch (error) {
+  console.error("Telegram Web App not available. Running in standalone mode.");
+  showNotification("Ошибка: Запустите приложение через Telegram.");
+  tg = { initDataUnsafe: { user: null } }; // Заглушка для тестирования
+}
 
 let cart = [];
 let isAdminAuthenticated = false;
@@ -13,7 +20,7 @@ let currentFilters = {
   maxPrice: null,
   conditions: [],
 };
-const adminUserIds = [570191364];
+const adminUserIds = [570191364]; // Убедитесь, что ваш ID здесь
 let products = [];
 let reviews = [];
 let currentImageIndex = 0;
@@ -27,6 +34,11 @@ function checkIfAdminUser() {
 
 function renderBottomNav() {
   const bottomNav = document.getElementById("bottomNav");
+  bottomNav.innerHTML = `
+    <button onclick="showScreen('catalogScreen')">📋</button>
+    <button onclick="showScreen('cartScreen')">🛒</button>
+    <button onclick="showScreen('reviewsScreen')">💬</button>
+  `;
   if (isAdminUser) {
     const adminButton = document.createElement("button");
     adminButton.innerHTML = "🛠️";
@@ -37,11 +49,15 @@ function renderBottomNav() {
 
 function showNotification(message) {
   const notification = document.getElementById("notification");
-  notification.textContent = message;
-  notification.classList.add("show");
-  setTimeout(() => {
-    notification.classList.remove("show");
-  }, 3000);
+  if (notification) {
+    notification.textContent = message;
+    notification.classList.add("show");
+    setTimeout(() => {
+      notification.classList.remove("show");
+    }, 3000);
+  } else {
+    console.warn("Notification element not found:", message);
+  }
 }
 
 function showCartButton() {
@@ -153,7 +169,8 @@ function filterProducts() {
       currentFilters.conditions.includes(String(product.condition))
     );
   }
-  const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+  const searchInput = document.getElementById("searchInput");
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
   if (searchTerm) {
     filteredProducts = filteredProducts.filter((product) =>
       product.name.toLowerCase().includes(searchTerm)
@@ -169,8 +186,8 @@ function applyFilters() {
   currentFilters.sizes = Array.from(
     document.querySelectorAll('input[name="size"]:checked')
   ).map((cb) => cb.value);
-  const minPrice = document.getElementById("minPrice").value;
-  const maxPrice = document.getElementById("maxPrice").value;
+  const minPrice = document.getElementById("minPrice")?.value;
+  const maxPrice = document.getElementById("maxPrice")?.value;
   currentFilters.minPrice = minPrice ? Number(minPrice) : null;
   currentFilters.maxPrice = maxPrice ? Number(maxPrice) : null;
   currentFilters.conditions = Array.from(
@@ -194,8 +211,10 @@ function resetFilters() {
   document
     .querySelectorAll('input[name="size"]')
     .forEach((cb) => (cb.checked = false));
-  document.getElementById("minPrice").value = "";
-  document.getElementById("maxPrice").value = "";
+  const minPriceInput = document.getElementById("minPrice");
+  const maxPriceInput = document.getElementById("maxPrice");
+  if (minPriceInput) minPriceInput.value = "";
+  if (maxPriceInput) maxPriceInput.value = "";
   document
     .querySelectorAll('input[name="condition"]')
     .forEach((cb) => (cb.checked = false));
@@ -205,7 +224,9 @@ function resetFilters() {
 
 function showProductPage(productId) {
   const product = products.find((p) => p.id === productId);
+  if (!product) return;
   currentImageIndex = 0;
+  document.getElementById("productPage").dataset.productId = product.id;
   const sizeOptions =
     product.size.length > 0
       ? `<select id="sizeSelect">${product.size
@@ -241,10 +262,9 @@ function showProductPage(productId) {
 }
 
 function changeImage(direction) {
-  const product = products.find(
-    (p) =>
-      p.id === Number(document.getElementById("productPage").dataset.productId)
-  );
+  const productId = document.getElementById("productPage").dataset.productId;
+  const product = products.find((p) => p.id === Number(productId));
+  if (!product) return;
   currentImageIndex += direction;
   if (currentImageIndex < 0) currentImageIndex = product.images.length - 1;
   if (currentImageIndex >= product.images.length) currentImageIndex = 0;
@@ -329,9 +349,9 @@ function buyAll() {
 }
 
 async function submitDelivery() {
-  const name = document.getElementById("deliveryName").value;
-  const address = document.getElementById("deliveryAddress").value;
-  const phone = document.getElementById("deliveryPhone").value;
+  const name = document.getElementById("deliveryName")?.value;
+  const address = document.getElementById("deliveryAddress")?.value;
+  const phone = document.getElementById("deliveryPhone")?.value;
   if (!name || !address || !phone) {
     showNotification("Заполните все поля!");
     return;
@@ -343,14 +363,18 @@ async function submitDelivery() {
     size: item.selectedSize || "Без размера",
     price: item.price,
   }));
-  tg.sendData(
-    JSON.stringify({
-      action: "requestPayment",
-      total,
-      delivery: deliveryData,
-      items,
-    })
-  );
+  if (tg.sendData) {
+    tg.sendData(
+      JSON.stringify({
+        action: "requestPayment",
+        total,
+        delivery: deliveryData,
+        items,
+      })
+    );
+  } else {
+    showNotification("Ошибка: Отправка данных доступна только в Telegram.");
+  }
 }
 
 function renderReviews() {
@@ -408,18 +432,18 @@ function renderAdmin() {
 
 async function addProduct() {
   if (!isAdminAuthenticated) return;
-  const name = document.getElementById("newProductName").value;
-  const category = document.getElementById("newProductCategory").value;
+  const name = document.getElementById("newProductName")?.value;
+  const category = document.getElementById("newProductCategory")?.value;
   const sizesInput = document
     .getElementById("newProductSizes")
-    .value.split(",")
+    ?.value.split(",")
     .map((s) => s.trim())
     .filter((s) => s);
-  const price = Number(document.getElementById("newProductPrice").value);
-  const year = document.getElementById("newProductYear").value;
-  const blank = document.getElementById("newProductBlank").value;
+  const price = Number(document.getElementById("newProductPrice")?.value);
+  const year = document.getElementById("newProductYear")?.value;
+  const blank = document.getElementById("newProductBlank")?.value;
   const condition = Number(
-    document.getElementById("newProductCondition").value
+    document.getElementById("newProductCondition")?.value
   );
   const imageInput = document.getElementById("newProductImage");
   if (
@@ -475,6 +499,7 @@ async function addProduct() {
 
 function editProduct(index) {
   const product = products[index];
+  if (!product) return;
   document.getElementById("editProductIndex").value = index;
   document.getElementById("editProductName").value = product.name;
   document.getElementById("editProductCategory").value = product.category;
@@ -488,20 +513,21 @@ function editProduct(index) {
 }
 
 async function updateProduct() {
-  const index = Number(document.getElementById("editProductIndex").value);
+  const index = Number(document.getElementById("editProductIndex")?.value);
   const product = products[index];
-  const name = document.getElementById("editProductName").value;
-  const category = document.getElementById("editProductCategory").value;
+  if (!product) return;
+  const name = document.getElementById("editProductName")?.value;
+  const category = document.getElementById("editProductCategory")?.value;
   const sizesInput = document
     .getElementById("editProductSizes")
-    .value.split(",")
+    ?.value.split(",")
     .map((s) => s.trim())
     .filter((s) => s);
-  const price = Number(document.getElementById("editProductPrice").value);
-  const year = document.getElementById("editProductYear").value;
-  const blank = document.getElementById("editProductBlank").value;
+  const price = Number(document.getElementById("editProductPrice")?.value);
+  const year = document.getElementById("editProductYear")?.value;
+  const blank = document.getElementById("editProductBlank")?.value;
   const condition = Number(
-    document.getElementById("editProductCondition").value
+    document.getElementById("editProductCondition")?.value
   );
   const imageInput = document.getElementById("editProductImage");
   if (
@@ -550,6 +576,7 @@ function cancelEditProduct() {
 
 async function deleteProduct(index) {
   const product = products[index];
+  if (!product) return;
   try {
     await axios.delete(
       `https://shroud.onrender.com/api/products/${product._id}`
@@ -566,6 +593,7 @@ async function deleteProduct(index) {
 
 function editReview(index) {
   const review = reviews[index];
+  if (!review) return;
   document.getElementById("editReviewIndex").value = index;
   document.getElementById("editReviewUsername").value = review.username;
   document.getElementById("editReviewText").value = review.text;
@@ -574,9 +602,9 @@ function editReview(index) {
 }
 
 async function updateReview() {
-  const index = Number(document.getElementById("editReviewIndex").value);
-  const username = document.getElementById("editReviewUsername").value;
-  const text = document.getElementById("editReviewText").value;
+  const index = Number(document.getElementById("editReviewIndex")?.value);
+  const username = document.getElementById("editReviewUsername")?.value;
+  const text = document.getElementById("editReviewText")?.value;
   if (username && text) {
     try {
       const response = await axios.put(
@@ -621,19 +649,25 @@ function showScreen(screenId) {
   document.querySelectorAll(".screen").forEach((screen) => {
     screen.classList.remove("active");
   });
-  document.getElementById(screenId).classList.add("active");
-  if (screenId === "catalogScreen") {
-    renderCatalog(filterProducts());
-  } else if (screenId === "cartScreen") {
-    renderCart();
-  } else if (screenId === "reviewsScreen") {
-    renderReviews();
+  const targetScreen = document.getElementById(screenId);
+  if (targetScreen) {
+    targetScreen.classList.add("active");
+    if (screenId === "catalogScreen") {
+      renderCatalog(filterProducts());
+    } else if (screenId === "cartScreen") {
+      renderCart();
+    } else if (screenId === "reviewsScreen") {
+      renderReviews();
+    }
   }
 }
 
-document.getElementById("searchInput").addEventListener("input", () => {
-  renderCatalog(filterProducts());
-});
+const searchInput = document.getElementById("searchInput");
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    renderCatalog(filterProducts());
+  });
+}
 
 checkIfAdminUser();
 renderBottomNav();
