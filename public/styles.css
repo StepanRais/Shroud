@@ -1,99 +1,74 @@
-/* Базовые цвета */
+/* Базовая палитра */
 :root {
   --black: #0d0d0d;
   --dark-gray: #1a1a1a;
-  --gray: #333333;
+  --gray: #333;
   --maroon: #800000;
   --white: #ffffff;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 body {
-  font-family: "Arial", sans-serif;
+  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
   background-color: var(--black);
   color: var(--white);
 }
 
-/* Общий контейнер */
 .container {
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+  padding-bottom: 80px;
   position: relative;
 }
 
-/* Экраны */
 .screen {
   display: none;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 .screen.active {
   display: block;
 }
 
-/* Поиск */
 .search-bar {
   display: flex;
   align-items: center;
+  gap: 10px;
   margin-bottom: 20px;
-  position: relative;
 }
 
 .search-bar input {
   flex: 1;
-  padding: 12px 40px 12px 12px;
+  padding: 12px;
   background: var(--dark-gray);
   border: 1px solid var(--gray);
   border-radius: 10px;
   color: var(--white);
 }
 
-.search-icon {
-  position: absolute;
-  right: 50px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--white);
+.filter-btn {
+  background: var(--gray);
+  padding: 10px;
+  border-radius: 10px;
 }
 
-/* Кнопки */
-button,
-input[type="submit"] {
-  background: var(--maroon);
-  color: var(--white);
-  border: none;
-  padding: 10px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-button:hover {
-  background: #990000;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Каталог */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 20px;
+  padding-bottom: 60px;
 }
 
 .product {
   background: var(--dark-gray);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  padding: 10px;
+  padding: 15px;
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.3s ease;
 }
 
 .product:hover {
@@ -101,9 +76,10 @@ button:disabled {
 }
 
 .product-image-container {
-  height: 150px;
-  border-radius: 10px;
+  height: 180px;
   overflow: hidden;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .product img {
@@ -113,33 +89,71 @@ button:disabled {
 }
 
 .product h3 {
-  font-size: 16px;
-  margin: 10px 0 5px;
+  font-size: 18px;
+  margin: 5px 0;
 }
 
 .product p {
-  font-size: 14px;
+  font-size: 15px;
   color: #ccc;
+  margin: 3px 0;
 }
 
 .stars {
+  font-size: 18px;
   color: var(--maroon);
 }
 
-/* Кнопка "Добавить в корзину" */
-.add-to-cart-btn {
-  width: 100%;
-  background: var(--maroon);
+.product-image {
+  max-height: 300px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 10px;
+  margin-bottom: 20px;
 }
 
-/* Корзина */
+.product-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--white);
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.arrow.left {
+  left: 10px;
+}
+
+.arrow.right {
+  right: 10px;
+}
+
+.add-to-cart-btn {
+  background: var(--maroon);
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
 .cart-item {
   display: flex;
   gap: 10px;
   background: var(--dark-gray);
   border-radius: 10px;
-  box-shadow: var(--shadow);
   padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
 }
 
 .cart-item img {
@@ -149,25 +163,37 @@ button:disabled {
   object-fit: cover;
 }
 
-/* Навигация */
+.cart-item-details h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.cart-item-details p {
+  font-size: 14px;
+  color: #ccc;
+  margin: 3px 0;
+}
+
 .bottom-nav {
   position: fixed;
   bottom: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
   background: var(--gray);
   display: flex;
   justify-content: space-around;
   padding: 10px 0;
-  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .bottom-nav button {
   background: none;
+  border: none;
   color: var(--white);
   font-size: 24px;
+  cursor: pointer;
 }
 
-/* Уведомление */
 .notification {
   position: fixed;
   top: 20px;
@@ -187,11 +213,74 @@ button:disabled {
   opacity: 1;
 }
 
-/* Анимации */
+.form-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--dark-gray);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+textarea,
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+input[type="password"] {
+  background: var(--black);
+  color: var(--white);
+  border: 1px solid var(--gray);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+button,
+input[type="submit"] {
+  background: var(--maroon);
+  color: var(--white);
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #990000;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-group {
+  margin-bottom: 20px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dim {
+  opacity: 0.8;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;

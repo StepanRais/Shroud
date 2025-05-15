@@ -15,9 +15,8 @@
       <div class="screen active" id="catalogScreen">
         <div class="search-bar">
           <input type="text" id="searchInput" placeholder="Поиск..." />
-          <span class="search-icon">🔍</span>
           <button class="filter-btn" onclick="showScreen('filterScreen')">
-            Фильтры ⚙️
+            ⚙️
           </button>
         </div>
         <div class="catalog" id="catalog"></div>
@@ -41,18 +40,23 @@
       <!-- Доставка -->
       <div class="screen" id="deliveryScreen">
         <h2>Оформление доставки</h2>
-        <p>Доставка осуществляется только через "Почта России".</p>
-        <form id="deliveryForm">
-          <label for="deliveryName">Ваше имя:</label>
+        <p class="dim">Доставка осуществляется через "Почта России"</p>
+        <form id="deliveryForm" class="form-block">
+          <label for="deliveryName">Имя</label>
           <input type="text" id="deliveryName" required />
-          <label for="deliveryAddress">Адрес доставки:</label>
+
+          <label for="deliveryAddress">Адрес</label>
           <textarea id="deliveryAddress" required></textarea>
-          <label for="deliveryPhone">Телефон:</label>
+
+          <label for="deliveryPhone">Телефон</label>
           <input type="tel" id="deliveryPhone" required />
-          <button type="button" onclick="submitDelivery()">Далее</button>
-          <button type="button" onclick="showScreen('cartScreen')">
-            Назад
-          </button>
+
+          <div class="form-actions">
+            <button type="button" onclick="submitDelivery()">Далее</button>
+            <button type="button" onclick="showScreen('cartScreen')">
+              Назад
+            </button>
+          </div>
         </form>
       </div>
 
@@ -68,31 +72,37 @@
         <div class="filters">
           <div class="filter-group">
             <h3>Категория</h3>
-            <label
-              ><input type="checkbox" name="category" value="Футболка" />
-              Футболка</label
-            >
-            <label
-              ><input type="checkbox" name="category" value="Лонгслив" />
-              Лонгслив</label
-            >
-            <label
-              ><input type="checkbox" name="category" value="Худи" />
-              Худи</label
-            >
-            <label
-              ><input type="checkbox" name="category" value="Другое" />
-              Другое</label
-            >
+            <div class="options">
+              <label
+                ><input type="checkbox" name="category" value="Футболка" />
+                Футболка</label
+              >
+              <label
+                ><input type="checkbox" name="category" value="Лонгслив" />
+                Лонгслив</label
+              >
+              <label
+                ><input type="checkbox" name="category" value="Худи" />
+                Худи</label
+              >
+              <label
+                ><input type="checkbox" name="category" value="Другое" />
+                Другое</label
+              >
+            </div>
           </div>
 
           <div class="filter-group">
             <h3>Размер</h3>
-            <label><input type="checkbox" name="size" value="S" /> S</label>
-            <label><input type="checkbox" name="size" value="M" /> M</label>
-            <label><input type="checkbox" name="size" value="L" /> L</label>
-            <label><input type="checkbox" name="size" value="XL" /> XL</label>
-            <label><input type="checkbox" name="size" value="XXL" /> XXL</label>
+            <div class="options">
+              <label><input type="checkbox" name="size" value="S" /> S</label>
+              <label><input type="checkbox" name="size" value="M" /> M</label>
+              <label><input type="checkbox" name="size" value="L" /> L</label>
+              <label><input type="checkbox" name="size" value="XL" /> XL</label>
+              <label
+                ><input type="checkbox" name="size" value="XXL" /> XXL</label
+              >
+            </div>
           </div>
 
           <div class="filter-group">
@@ -103,26 +113,28 @@
 
           <div class="filter-group">
             <h3>Состояние</h3>
-            <label
-              ><input type="checkbox" name="condition" value="1" /> 1
-              звезда</label
-            >
-            <label
-              ><input type="checkbox" name="condition" value="2" /> 2
-              звезды</label
-            >
-            <label
-              ><input type="checkbox" name="condition" value="3" /> 3
-              звезды</label
-            >
-            <label
-              ><input type="checkbox" name="condition" value="4" /> 4
-              звезды</label
-            >
-            <label
-              ><input type="checkbox" name="condition" value="5" /> 5
-              звёзд</label
-            >
+            <div class="options">
+              <label
+                ><input type="checkbox" name="condition" value="1" /> 1
+                звезда</label
+              >
+              <label
+                ><input type="checkbox" name="condition" value="2" /> 2
+                звезды</label
+              >
+              <label
+                ><input type="checkbox" name="condition" value="3" /> 3
+                звезды</label
+              >
+              <label
+                ><input type="checkbox" name="condition" value="4" /> 4
+                звезды</label
+              >
+              <label
+                ><input type="checkbox" name="condition" value="5" /> 5
+                звёзд</label
+              >
+            </div>
           </div>
 
           <div class="filter-actions">
@@ -138,73 +150,90 @@
       <div class="screen" id="adminScreen">
         <h2>Админ-панель</h2>
         <div class="admin-section" id="adminLogin">
-          <h3>Введите пароль</h3>
+          <h3>Пароль</h3>
           <input type="password" id="adminPassword" />
           <button onclick="checkAdminPassword()">Войти</button>
         </div>
 
         <div class="admin-section" id="adminContent" style="display: none">
-          <h3>Добавить товар</h3>
-          <input type="text" id="newProductName" placeholder="Название" />
-          <input type="text" id="newProductCategory" placeholder="Категория" />
-          <input
-            type="text"
-            id="newProductSizes"
-            placeholder="Размеры (через запятую)"
-          />
-          <input type="number" id="newProductPrice" placeholder="Цена" />
-          <input
-            type="number"
-            id="newProductYear"
-            placeholder="Год (необязательно)"
-          />
-          <input
-            type="text"
-            id="newProductBlank"
-            placeholder="Бланк (необязательно)"
-          />
-          <input
-            type="number"
-            id="newProductCondition"
-            placeholder="Состояние (1-5)"
-          />
-          <input type="file" id="newProductImage" accept="image/*" multiple />
-          <button onclick="addProduct()">Добавить товар</button>
+          <h3>Добавление товара</h3>
+          <div class="form-block">
+            <input type="text" id="newProductName" placeholder="Название" />
+            <input
+              type="text"
+              id="newProductCategory"
+              placeholder="Категория"
+            />
+            <input
+              type="text"
+              id="newProductSizes"
+              placeholder="Размеры (через запятую)"
+            />
+            <input type="number" id="newProductPrice" placeholder="Цена" />
+            <input
+              type="number"
+              id="newProductYear"
+              placeholder="Год (необязательно)"
+            />
+            <input
+              type="text"
+              id="newProductBlank"
+              placeholder="Бланк (необязательно)"
+            />
+            <input
+              type="number"
+              id="newProductCondition"
+              placeholder="Состояние (1-5)"
+            />
+            <input type="file" id="newProductImage" accept="image/*" multiple />
+            <button onclick="addProduct()">Добавить</button>
+          </div>
         </div>
 
         <div class="admin-section" id="editProductForm" style="display: none">
-          <h3>Редактировать товар</h3>
-          <input type="hidden" id="editProductIndex" />
-          <input type="text" id="editProductName" placeholder="Название" />
-          <input type="text" id="editProductCategory" placeholder="Категория" />
-          <input
-            type="text"
-            id="editProductSizes"
-            placeholder="Размеры (через запятую)"
-          />
-          <input type="number" id="editProductPrice" placeholder="Цена" />
-          <input
-            type="number"
-            id="editProductYear"
-            placeholder="Год (необязательно)"
-          />
-          <input
-            type="text"
-            id="editProductBlank"
-            placeholder="Бланк (необязательно)"
-          />
-          <input
-            type="number"
-            id="editProductCondition"
-            placeholder="Состояние (1-5)"
-          />
-          <input type="file" id="editProductImage" accept="image/*" multiple />
-          <button onclick="updateProduct()">Сохранить</button>
-          <button onclick="cancelEditProduct()">Отмена</button>
+          <h3>Редактировать</h3>
+          <div class="form-block">
+            <input type="hidden" id="editProductIndex" />
+            <input type="text" id="editProductName" placeholder="Название" />
+            <input
+              type="text"
+              id="editProductCategory"
+              placeholder="Категория"
+            />
+            <input
+              type="text"
+              id="editProductSizes"
+              placeholder="Размеры (через запятую)"
+            />
+            <input type="number" id="editProductPrice" placeholder="Цена" />
+            <input
+              type="number"
+              id="editProductYear"
+              placeholder="Год (необязательно)"
+            />
+            <input
+              type="text"
+              id="editProductBlank"
+              placeholder="Бланк (необязательно)"
+            />
+            <input
+              type="number"
+              id="editProductCondition"
+              placeholder="Состояние (1-5)"
+            />
+            <input
+              type="file"
+              id="editProductImage"
+              accept="image/*"
+              multiple
+            />
+            <button onclick="updateProduct()">Сохранить</button>
+            <button onclick="cancelEditProduct()">Отмена</button>
+          </div>
         </div>
 
         <div class="admin-section" id="adminContent4" style="display: none">
-          <h3>Список товаров</h3>
+          <h3>Товары</h3>
           <div id="productList"></div>
         </div>
       </div>
