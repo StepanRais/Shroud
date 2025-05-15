@@ -160,7 +160,7 @@ bot.action("payment_confirmed", async (ctx) => {
             { headers: { "Content-Type": "multipart/form-data" } }
           );
         } else {
-          // Удаляем товар полностью
+          // Удаляем товар полностью, если был только один размер
           await axios.delete(
             `https://shroud.onrender.com/api/products/${product._id}`
           );

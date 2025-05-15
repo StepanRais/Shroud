@@ -5,7 +5,7 @@ try {
 } catch (error) {
   console.error("Telegram Web App not available. Running in standalone mode.");
   showNotification("Ошибка: Запустите приложение через Telegram.");
-  tg = { initDataUnsafe: { user: null } }; // Заглушка для тестирования
+  tg = { initDataUnsafe: { user: null } };
 }
 
 let cart = [];
@@ -20,7 +20,7 @@ let currentFilters = {
   maxPrice: null,
   conditions: [],
 };
-const adminUserIds = [570191364]; // Убедитесь, что ваш ID здесь
+const adminUserIds = [570191364];
 let products = [];
 let reviews = [];
 let currentImageIndex = 0;
@@ -60,21 +60,6 @@ function showNotification(message) {
   }
 }
 
-function showCartButton() {
-  const existingButton = document.querySelector(".cart-button");
-  if (existingButton) existingButton.remove();
-  const button = document.createElement("button");
-  button.className = "cart-button";
-  button.textContent = "Перейти в корзину";
-  button.onclick = () => showScreen("cartScreen");
-  document.body.appendChild(button);
-  setTimeout(() => button.classList.add("show"), 100);
-  setTimeout(() => {
-    button.classList.remove("show");
-    setTimeout(() => button.remove(), 500);
-  }, 3000);
-}
-
 async function loadData() {
   try {
     const productsResponse = await axios.get(
@@ -106,6 +91,8 @@ async function checkAdminPassword() {
     document.getElementById("adminContent2").style.display = "block";
     document.getElementById("adminContent4").style.display = "block";
     document.getElementById("adminContent5").style.display = "block";
+    document.querySelector("#adminScreen .admin-section button").style.display =
+      "none"; // Скрываем кнопку "Войти"
     await loadData();
     showNotification("Доступ открыт!");
   } else {
@@ -120,12 +107,16 @@ function renderCatalog(filteredProducts = products) {
     const productDiv = document.createElement("div");
     productDiv.className = "product";
     const imageUrl = product.images[0] || "https://via.placeholder.com/150";
+    const yearDisplay = product.year ? `Год: ${product.year}<br>` : "";
+    const blankDisplay = product.blank ? `Бланк: ${product.blank}<br>` : "";
     productDiv.innerHTML = `
       <div class="product-image-container">
         <img src="${imageUrl}" alt="${product.name}">
       </div>
       <h3>${product.name}</h3>
-      <p>${product.size.length > 0 ? product.size.join("/") : "Без размера"}</p>
+      <p>${yearDisplay}${blankDisplay}Размер: ${
+      product.size.length > 0 ? product.size.join("/") : "Без размера"
+    }</p>
       <p>${product.price}₽</p>
       <div class="stars">${renderStars(product.condition)}</div>
     `;
@@ -293,7 +284,6 @@ async function addToCart(productId) {
     if (response.data.message === "Product reserved") {
       cart.push({ ...product, selectedSize });
       renderCart();
-      showCartButton();
       showNotification("Товар добавлен в корзину!");
     }
   } catch (error) {
