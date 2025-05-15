@@ -216,46 +216,6 @@ bot.on("photo", async (ctx) => {
   }
 });
 
-bot.on("message", async (ctx) => {
-  if (ctx.message.web_app_data) {
-    try {
-      console.log("Web app data received from user:", ctx.from.id);
-      const data = JSON.parse(ctx.message.web_app_data.data);
-      if (data.action === "requestPayment") {
-        const { total, delivery, items } = data;
-        userStates[ctx.from.id] = {
-          state: "waiting_for_payment",
-          orderData: data,
-        };
-        let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
-        message += `Имя получателя: Иван Иванов\n`;
-        message += `Банк: Сбербанк\n`;
-        message += `После оплаты нажмите "Я оплатил".\n\n`;
-        message += `Детали заказа:\n`;
-        items.forEach((item, index) => {
-          message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
-            item.price
-          }₽\n`;
-        });
-        message += `\nФИО: ${delivery.name}\n`;
-        message += `Адрес: ${delivery.address}\n`;
-        message += `Телефон: ${delivery.phone}\n`;
-        message += `Итого: ${total}₽`;
-        await ctx.reply(message, {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
-            ],
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error processing web app data:", error.message);
-      ctx.reply("Ошибка при обработке заказа. Попробуйте позже.");
-    }
-  }
-});
-
 bot.on("text", async (ctx) => {
   const userId = ctx.from.id;
   const state = userStates[userId]?.state;
@@ -353,6 +313,46 @@ bot.on("text", async (ctx) => {
       ctx.reply("Ошибка при отправке анкеты. Попробуйте позже.");
     }
     delete userStates[userId];
+  }
+});
+
+bot.on("message", async (ctx) => {
+  if (ctx.message.web_app_data) {
+    try {
+      console.log("Web app data received from user:", ctx.from.id);
+      const data = JSON.parse(ctx.message.web_app_data.data);
+      if (data.action === "requestPayment") {
+        const { total, delivery, items } = data;
+        userStates[ctx.from.id] = {
+          state: "waiting_for_payment",
+          orderData: data,
+        };
+        let message = `Для оплаты переведите ${total} рублей по номеру: +79991234567\n`;
+        message += `Имя получателя: Иван Иванов\n`;
+        message += `Банк: Сбербанк\n`;
+        message += `После оплаты нажмите "Я оплатил".\n\n`;
+        message += `Детали заказа:\n`;
+        items.forEach((item, index) => {
+          message += `${index + 1}. ${item.name} (Размер: ${item.size}) - ${
+            item.price
+          }₽\n`;
+        });
+        message += `\nФИО: ${delivery.name}\n`;
+        message += `Адрес: ${delivery.address}\n`;
+        message += `Телефон: ${delivery.phone}\n`;
+        message += `Итого: ${total}₽`;
+        await ctx.reply(message, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "Я оплатил", callback_data: "payment_confirmed" }],
+            ],
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error processing web app data:", error.message);
+      ctx.reply("Ошибка при обработке заказа. Попробуйте позже.");
+    }
   }
 });
 
