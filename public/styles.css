@@ -7,8 +7,8 @@
 
 body {
   font-family: "Montserrat", sans-serif;
-  background-color: #1c2526; /* Black */
-  color: #e0e0e0; /* Light gray for text */
+  background-color: #1c2526; /* Чёрный */
+  color: #e0e0e0; /* Светло-серый для текста */
   line-height: 1.6;
   overflow-x: hidden;
 }
@@ -25,22 +25,17 @@ h2,
 h3,
 h4 {
   font-family: "Bebas Neue", sans-serif;
-  color: #800000; /* Burgundy */
+  color: #800000; /* Бордовый */
   letter-spacing: 1px;
 }
 
 /* Screen Transitions */
 .screen {
   display: none;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .screen.active {
   display: block;
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* Search Bar */
@@ -48,7 +43,7 @@ h4 {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -64,28 +59,22 @@ h4 {
 }
 
 .search-bar input::placeholder {
-  color: #4a4a4a; /* Gray */
+  color: #a0a0a0; /* Более контрастный серый для плейсхолдера */
 }
 
 .search-icon {
-  color: #800000; /* Burgundy */
+  color: #800000; /* Бордовый */
   font-size: 20px;
   margin-right: 10px;
 }
 
 .filter-btn {
-  background: #800000; /* Burgundy */
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 8px 12px;
   border-radius: 5px;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.filter-btn:hover {
-  background: #a00000;
-  transform: scale(1.05);
 }
 
 /* Catalog */
@@ -96,17 +85,11 @@ h4 {
 }
 
 .product {
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 12px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-}
-
-.product:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
 .product-image-container {
@@ -120,11 +103,6 @@ h4 {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.product:hover img {
-  transform: scale(1.1);
 }
 
 .product h3 {
@@ -135,18 +113,18 @@ h4 {
 
 .product p {
   font-size: 14px;
-  color: #4a4a4a; /* Gray */
+  color: #a0a0a0; /* Более контрастный серый для текста */
 }
 
 .stars {
-  color: #800000; /* Burgundy */
+  color: #800000; /* Бордовый */
   font-size: 14px;
 }
 
 /* Product Page */
 .product-page {
   position: relative;
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
@@ -156,18 +134,13 @@ h4 {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: #4a4a4a; /* Gray */
+  background: #4a4a4a; /* Серый */
   color: #e0e0e0;
   border: none;
   font-size: 18px;
   padding: 8px;
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #800000; /* Burgundy */
 }
 
 .product-image {
@@ -193,11 +166,6 @@ h4 {
   border: none;
   padding: 10px;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.arrow:hover {
-  background: #800000; /* Burgundy */
 }
 
 .arrow.left {
@@ -220,12 +188,12 @@ h4 {
 .product-details p,
 .product-details select {
   font-size: 16px;
-  color: #4a4a4a; /* Gray */
+  color: #a0a0a0; /* Более контрастный серый */
   margin-bottom: 8px;
 }
 
 .add-to-cart-btn {
-  background: linear-gradient(45deg, #800000, #a00000); /* Burgundy gradient */
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 12px;
@@ -233,24 +201,16 @@ h4 {
   cursor: pointer;
   width: 100%;
   font-size: 16px;
-  font-weight: bold;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.add-to-cart-btn:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Cart */
 .cart-item {
   display: flex;
   align-items: center;
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .cart-item img {
@@ -268,62 +228,23 @@ h4 {
 
 .cart-item-details p {
   font-size: 14px;
-  color: #4a4a4a; /* Gray */
+  color: #a0a0a0; /* Более контрастный серый */
 }
 
-.cart-item-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.remove-btn,
-.buy-btn {
-  background: #800000; /* Burgundy */
+.cart-item-actions button {
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 8px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.remove-btn {
-  background: #4a4a4a; /* Gray */
-}
-
-.remove-btn:hover {
-  background: #5a5a5a;
-}
-
-.buy-btn:hover {
-  background: #a00000;
-}
-
-.buy-all-btn {
-  background: linear-gradient(45deg, #800000, #a00000); /* Burgundy gradient */
-  color: #e0e0e0;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  font-size: 16px;
-  font-weight: bold;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.buy-all-btn:hover {
-  transform: scale(1.03);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Delivery Form */
 .delivery-form {
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .delivery-form label {
@@ -337,44 +258,28 @@ h4 {
   width: 100%;
   padding: 10px;
   border: none;
-  background: #4a4a4a; /* Gray */
+  background: #4a4a4a; /* Серый */
   color: #e0e0e0;
   border-radius: 5px;
   margin-bottom: 12px;
 }
 
-.submit-btn,
-.back-btn {
-  background: #800000; /* Burgundy */
+.delivery-form button {
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
   width: 48%;
-  font-size: 16px;
-  transition: background 0.2s ease;
-}
-
-.back-btn {
-  background: #4a4a4a; /* Gray */
-}
-
-.submit-btn:hover {
-  background: #a00000;
-}
-
-.back-btn:hover {
-  background: #5a5a5a;
 }
 
 /* Reviews */
 .review {
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .review h3 {
@@ -384,15 +289,16 @@ h4 {
 
 .review p {
   font-size: 14px;
-  color: #4a4a4a; /* Gray */
+  color: #a0a0a0; /* Более контрастный серый */
 }
 
 /* Filters */
 .filters {
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  max-height: 80vh; /* Ограничение высоты */
+  overflow-y: auto; /* Скроллинг при переполнении */
 }
 
 .filter-group {
@@ -414,14 +320,14 @@ h4 {
 
 .filter-group input[type="checkbox"] {
   margin-right: 8px;
-  accent-color: #800000; /* Burgundy */
+  accent-color: #800000; /* Бордовый */
 }
 
 .filter-group input[type="number"] {
   width: 100%;
   padding: 10px;
   border: none;
-  background: #4a4a4a; /* Gray */
+  background: #4a4a4a; /* Серый */
   color: #e0e0e0;
   border-radius: 5px;
 }
@@ -431,38 +337,22 @@ h4 {
   gap: 12px;
 }
 
-.apply-btn,
-.reset-btn {
-  background: #800000; /* Burgundy */
+.filter-actions button {
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
   flex: 1;
-  font-size: 16px;
-  transition: background 0.2s ease;
-}
-
-.reset-btn {
-  background: #4a4a4a; /* Gray */
-}
-
-.apply-btn:hover {
-  background: #a00000;
-}
-
-.reset-btn:hover {
-  background: #5a5a5a;
 }
 
 /* Admin Section */
 .admin-section {
-  background: #2e2e2e; /* Dark gray */
+  background: #2e2e2e; /* Тёмно-серый */
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .admin-section input,
@@ -470,28 +360,23 @@ h4 {
   width: 100%;
   padding: 10px;
   border: none;
-  background: #4a4a4a; /* Gray */
+  background: #4a4a4a; /* Серый */
   color: #e0e0e0;
   border-radius: 5px;
   margin-bottom: 12px;
 }
 
 .admin-section button {
-  background: #800000; /* Burgundy */
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.admin-section button:hover {
-  background: #a00000;
 }
 
 .product-item {
-  background: #4a4a4a; /* Gray */
+  background: #4a4a4a; /* Серый */
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
@@ -504,12 +389,11 @@ h4 {
 
 .product-item p {
   font-size: 14px;
-  color: #e0e0e0;
+  color: #a0a0a0; /* Более контрастный серый */
 }
 
-.edit-btn,
-.delete-btn {
-  background: #800000; /* Burgundy */
+.product-item button {
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   border: none;
   padding: 8px;
@@ -518,25 +402,13 @@ h4 {
   margin-right: 8px;
 }
 
-.delete-btn {
-  background: #4a4a4a; /* Gray */
-}
-
-.edit-btn:hover {
-  background: #a00000;
-}
-
-.delete-btn:hover {
-  background: #5a5a5a;
-}
-
 /* Bottom Navigation */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #1c2526; /* Black */
+  background: #1c2526; /* Чёрный */
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: space-around;
@@ -549,12 +421,6 @@ h4 {
   font-size: 24px;
   color: #e0e0e0;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.bottom-nav button:hover {
-  color: #800000; /* Burgundy */
-  transform: scale(1.2);
 }
 
 /* Notification */
@@ -563,17 +429,16 @@ h4 {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(45deg, #800000, #a00000); /* Burgundy gradient */
+  background: #800000; /* Бордовый */
   color: #e0e0e0;
   padding: 12px 24px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease;
   z-index: 1000;
 }
 
 .notification.show {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }

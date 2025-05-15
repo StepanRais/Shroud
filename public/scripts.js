@@ -4,8 +4,8 @@ try {
   tg.ready();
 } catch (error) {
   console.error("Telegram Web App not available. Running in standalone mode.");
+  tg = { initDataUnsafe: { user: null } }; // Убедимся, что tg определён
   showNotification("Ошибка: Запустите приложение через Telegram.");
-  tg = { initDataUnsafe: { user: null } };
 }
 
 let cart = [];
@@ -29,6 +29,7 @@ function checkIfAdminUser() {
   const user = tg.initDataUnsafe.user;
   if (user && adminUserIds.includes(user.id)) {
     isAdminUser = true;
+    renderBottomNav(); // Перерендериваем навбар при определении админа
   }
 }
 
@@ -114,7 +115,7 @@ function renderCatalog(filteredProducts = products) {
       <p>${product.price}₽</p>
       <div class="stars">${renderStars(product.condition)}</div>
     `;
-    productDiv.onclick = () => showProductPage(product.id);
+    productDiv.onclick = () => showProductPage(product.id); // Убедимся, что клик работает
     catalogDiv.appendChild(productDiv);
   });
 }
@@ -211,8 +212,7 @@ function showProductPage(productId) {
   const product = products.find((p) => p.id === productId);
   if (!product) return;
   currentImageIndex = 0;
-  document.getElementByIdgetElementById("productPage").dataset.productId =
-    product.id;
+  document.getElementById("productPage").dataset.productId = product.id;
   const sizeOptions =
     product.size.length > 0
       ? `<select id="sizeSelect">${product.size
@@ -225,6 +225,7 @@ function showProductPage(productId) {
   const blankDisplay = product.blank ? `<p>Бланк: ${product.blank}</p>` : "";
   const productPageDiv = document.getElementById("productPage");
   productPageDiv.innerHTML = `
+    <button class="close-btn" onclick="showScreen('catalogScreen')">✖</button>
     <div class="product-image">
       <img src="${imageUrl}" alt="${product.name}" id="productImage">
       <button class="arrow left" onclick="changeImage(-1)">⬅</button>
@@ -279,10 +280,6 @@ async function addToCart(productId) {
     if (response.data.message === "Product reserved") {
       cart.push({ ...product, selectedSize });
       renderCart();
-      // Add micro-interaction
-      const addBtn = document.querySelector(".add-to-cart-btn");
-      addBtn.classList.add("pulse");
-      setTimeout(() => addBtn.classList.remove("pulse"), 300);
       showNotification("Товар добавлен в корзину!");
     }
   } catch (error) {
@@ -587,15 +584,15 @@ function showScreen(screenId) {
   });
   const targetScreen = document.getElementById(screenId);
   if (targetScreen) {
-    setTimeout(() => {
-      targetScreen.classList.add("active");
-    }, 50); // Small delay to ensure smooth transition
+    targetScreen.classList.add("active");
     if (screenId === "catalogScreen") {
       renderCatalog(filterProducts());
     } else if (screenId === "cartScreen") {
       renderCart();
     } else if (screenId === "reviewsScreen") {
       renderReviews();
+    } else if (screenId === "adminScreen" && isAdminAuthenticated) {
+      renderAdmin();
     }
   }
 }
