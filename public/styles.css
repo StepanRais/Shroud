@@ -1,82 +1,109 @@
-/* Reset & Base */
-body {
-  font-family: "Segoe UI", sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #1a1a1a;
-  color: #ccc;
-  transition: background 0.3s ease;
+/* Базовые цвета */
+:root {
+  --black: #0d0d0d;
+  --dark-gray: #1a1a1a;
+  --gray: #333333;
+  --maroon: #800000;
+  --white: #ffffff;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+body {
+  font-family: "Arial", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--black);
+  color: var(--white);
+}
+
+/* Общий контейнер */
 .container {
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+  position: relative;
 }
 
-/* Search Bar */
+/* Экраны */
+.screen {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* Поиск */
 .search-bar {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
+  position: relative;
 }
 
 .search-bar input {
   flex: 1;
-  padding: 10px 40px 10px 10px;
-  border: none;
-  border-radius: 6px;
-  background: #2a2a2a;
-  color: #ccc;
-}
-
-.search-bar input::placeholder {
-  color: #777;
+  padding: 12px 40px 12px 12px;
+  background: var(--dark-gray);
+  border: 1px solid var(--gray);
+  border-radius: 10px;
+  color: var(--white);
 }
 
 .search-icon {
-  position: relative;
-  margin-left: -35px;
-  color: #800000;
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--white);
 }
 
-.filter-btn {
-  background: #333;
-  color: #ccc;
+/* Кнопки */
+button,
+input[type="submit"] {
+  background: var(--maroon);
+  color: var(--white);
   border: none;
-  padding: 8px 12px;
-  margin-left: 10px;
-  border-radius: 6px;
+  padding: 10px 15px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-/* Product Catalog */
+button:hover {
+  background: #990000;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Каталог */
 .catalog {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
 }
 
 .product {
-  background: #000;
+  background: var(--dark-gray);
   border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-  cursor: pointer;
+  box-shadow: var(--shadow);
+  padding: 10px;
   text-align: center;
+  transition: transform 0.2s ease;
 }
 
 .product:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 18px rgba(128, 0, 0, 0.4);
+  transform: scale(1.02);
 }
 
 .product-image-container {
   height: 150px;
-  overflow: hidden;
   border-radius: 10px;
-  margin-bottom: 10px;
+  overflow: hidden;
 }
 
 .product img {
@@ -87,160 +114,87 @@ body {
 
 .product h3 {
   font-size: 16px;
-  margin: 5px 0;
-  color: #eee;
+  margin: 10px 0 5px;
 }
 
 .product p {
   font-size: 14px;
-  margin: 3px 0;
-  color: #999;
+  color: #ccc;
 }
 
 .stars {
-  color: #800000;
-  font-size: 16px;
+  color: var(--maroon);
 }
 
-/* Product Page */
-.product-page {
-  background: #111;
-  border-radius: 10px;
-  padding: 20px;
-}
-
-.product-details h2 {
-  font-size: 20px;
-  color: #fff;
-}
-
-.product-details p {
-  font-size: 15px;
-  color: #bbb;
-}
-
+/* Кнопка "Добавить в корзину" */
 .add-to-cart-btn {
-  background: #800000;
-  color: #fff;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
   width: 100%;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
+  background: var(--maroon);
 }
 
-.add-to-cart-btn:hover {
-  background: #a00000;
-}
-
-.arrow {
-  background: rgba(128, 0, 0, 0.6);
-  border: none;
-  padding: 10px;
-  color: #fff;
-  cursor: pointer;
-}
-
-/* Cart */
+/* Корзина */
 .cart-item {
-  background: #111;
-  border-radius: 10px;
-  padding: 10px;
   display: flex;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 6px rgba(255, 255, 255, 0.05);
+  gap: 10px;
+  background: var(--dark-gray);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px;
 }
 
 .cart-item img {
   width: 80px;
   height: 80px;
-  border-radius: 6px;
-  margin-right: 10px;
-}
-
-.cart-item-details {
-  flex: 1;
-}
-
-.remove-btn,
-.buy-btn,
-.buy-all-btn {
-  background: #800000;
-  color: #fff;
-  border: none;
-  padding: 6px 10px;
   border-radius: 5px;
-  margin-top: 5px;
-  cursor: pointer;
+  object-fit: cover;
 }
 
-/* Admin & Filters */
-.admin-section,
-.filters {
-  background: #111;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(255, 255, 255, 0.05);
-  margin-bottom: 15px;
-}
-
-.admin-section input,
-.filters input,
-textarea,
-select {
-  background: #2a2a2a;
-  color: #eee;
-  border: none;
-  padding: 10px;
-  border-radius: 6px;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
-button {
-  font-family: inherit;
-}
-
-/* Bottom Navigation */
+/* Навигация */
 .bottom-nav {
-  background: #111;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: var(--gray);
   display: flex;
   justify-content: space-around;
   padding: 10px 0;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .bottom-nav button {
   background: none;
-  border: none;
+  color: var(--white);
   font-size: 24px;
-  color: #ccc;
-  cursor: pointer;
 }
 
-/* Notification */
+/* Уведомление */
 .notification {
-  background: #800000;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(128, 0, 0, 0.5);
   position: fixed;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
+  background: var(--maroon);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
   opacity: 0;
-  z-index: 1000;
   transition: opacity 0.3s ease;
+  z-index: 1000;
 }
 
 .notification.show {
   opacity: 1;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
