@@ -3,20 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Metal Merch Store</title>
+    <title>Shroud Merch</title>
     <link rel="stylesheet" href="styles.css" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Bebas+Neue&display=swap"
-      rel="stylesheet"
-    />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="scripts.js" defer></script>
   </head>
   <body>
     <div class="container">
-      <div id="notification" class="notification"></div>
-
-      <!-- Catalog Screen -->
-      <div id="catalogScreen" class="screen active">
+      <div class="screen active" id="catalogScreen">
         <div class="search-bar">
           <input type="text" id="searchInput" placeholder="Поиск..." />
           <span class="search-icon">🔍</span>
@@ -24,50 +19,45 @@
             Фильтры ⚙️
           </button>
         </div>
-        <div id="catalog" class="catalog"></div>
+        <div class="catalog" id="catalog"></div>
       </div>
 
-      <!-- Product Screen -->
-      <div id="productScreen" class="screen">
+      <div class="screen" id="productScreen">
         <button class="close-btn" onclick="showScreen('catalogScreen')">
           ✖
         </button>
-        <div id="productPage" class="product-page"></div>
+        <div class="product-page" id="productPage"></div>
       </div>
 
-      <!-- Cart Screen -->
-      <div id="cartScreen" class="screen">
+      <div class="screen" id="cartScreen">
         <h2>Корзина</h2>
-        <div id="cart" class="cart"></div>
+        <div class="cart" id="cart"></div>
         <button class="buy-all-btn" onclick="buyAll()">КУПИТЬ ВСЁ</button>
       </div>
 
-      <!-- Delivery Screen -->
-      <div id="deliveryScreen" class="screen">
+      <div class="screen" id="deliveryScreen">
         <h2>Оформление доставки</h2>
         <p>Доставка осуществляется только через "Почта России".</p>
-        <div class="delivery-form">
-          <label>Ваше имя:</label>
-          <input type="text" id="deliveryName" />
-          <label>Адрес доставки:</label>
-          <input type="text" id="deliveryAddress" />
-          <label>Телефон:</label>
-          <input type="text" id="deliveryPhone" />
-          <button class="submit-btn" onclick="submitDelivery()">Далее</button>
-          <button class="back-btn" onclick="showScreen('cartScreen')">
+        <form id="deliveryForm">
+          <label for="deliveryName">Ваше имя:</label>
+          <input type="text" id="deliveryName" required />
+          <label for="deliveryAddress">Адрес доставки:</label>
+          <textarea id="deliveryAddress" required></textarea>
+          <label for="deliveryPhone">Телефон:</label>
+          <input type="tel" id="deliveryPhone" required />
+          <button type="button" onclick="submitDelivery()">Далее</button>
+          <button type="button" onclick="showScreen('cartScreen')">
             Назад
           </button>
-        </div>
+        </form>
       </div>
 
-      <!-- Reviews Screen -->
-      <div id="reviewsScreen" class="screen">
+      <div class="screen" id="reviewsScreen">
         <h2>Отзывы</h2>
-        <div id="reviews" class="reviews"></div>
+        <div class="reviews" id="reviews"></div>
       </div>
 
-      <!-- Filter Screen -->
-      <div id="filterScreen" class="screen">
+      <div class="screen" id="filterScreen">
         <h2>Фильтры</h2>
         <div class="filters">
           <div class="filter-group">
@@ -99,8 +89,12 @@
           </div>
           <div class="filter-group">
             <h3>Цена</h3>
-            <input type="number" id="minPrice" placeholder="Мин. цена" />
-            <input type="number" id="maxPrice" placeholder="Макс. цена" />
+            <input type="number" id="minPrice" placeholder="Минимальная цена" />
+            <input
+              type="number"
+              id="maxPrice"
+              placeholder="Максимальная цена"
+            />
           </div>
           <div class="filter-group">
             <h3>Состояние</h3>
@@ -134,14 +128,14 @@
         </div>
       </div>
 
-      <!-- Admin Screen -->
-      <div id="adminScreen" class="screen">
-        <div id="adminLogin" class="admin-section">
+      <div class="screen" id="adminScreen">
+        <h2>Администратор</h2>
+        <div class="admin-section" id="adminLogin">
           <h3>Введите пароль</h3>
           <input type="password" id="adminPassword" />
           <button onclick="checkAdminPassword()">Войти</button>
         </div>
-        <div id="adminContent" class="admin-section" style="display: none">
+        <div class="admin-section" id="adminContent" style="display: none">
           <h3>Добавить товар</h3>
           <input type="text" id="newProductName" placeholder="Название" />
           <input type="text" id="newProductCategory" placeholder="Категория" />
@@ -152,14 +146,14 @@
           />
           <input type="number" id="newProductPrice" placeholder="Цена" />
           <input
-            type="text"
+            type="number"
             id="newProductYear"
-            placeholder="Год (опционально)"
+            placeholder="Год (необязательно)"
           />
           <input
             type="text"
             id="newProductBlank"
-            placeholder="Бланк (опционально)"
+            placeholder="Бланк (необязательно)"
           />
           <input
             type="number"
@@ -169,7 +163,7 @@
           <input type="file" id="newProductImage" accept="image/*" multiple />
           <button onclick="addProduct()">Добавить товар</button>
         </div>
-        <div id="editProductForm" class="admin-section" style="display: none">
+        <div class="admin-section" id="editProductForm" style="display: none">
           <h3>Редактировать товар</h3>
           <input type="hidden" id="editProductIndex" />
           <input type="text" id="editProductName" placeholder="Название" />
@@ -181,14 +175,14 @@
           />
           <input type="number" id="editProductPrice" placeholder="Цена" />
           <input
-            type="text"
+            type="number"
             id="editProductYear"
-            placeholder="Год (опционально)"
+            placeholder="Год (необязательно)"
           />
           <input
             type="text"
             id="editProductBlank"
-            placeholder="Бланк (опционально)"
+            placeholder="Бланк (необязательно)"
           />
           <input
             type="number"
@@ -199,19 +193,54 @@
           <button onclick="updateProduct()">Сохранить изменения</button>
           <button onclick="cancelEditProduct()">Отмена</button>
         </div>
-        <div id="adminContent4" class="admin-section" style="display: none">
+        <div class="admin-section" id="adminContent4" style="display: none">
           <h3>Товары</h3>
           <div id="productList"></div>
         </div>
       </div>
-
-      <!-- Bottom Navigation -->
-      <div id="bottomNav" class="bottom-nav">
-        <button onclick="showScreen('catalogScreen')">📋</button>
-        <button onclick="showScreen('cartScreen')">🛒</button>
-        <button onclick="showScreen('reviewsScreen')">💬</button>
-      </div>
     </div>
-    <script src="scripts.js"></script>
+
+    <div class="bottom-nav" id="bottomNav">
+      <button onclick="showScreen('catalogScreen')">📋</button>
+      <button onclick="showScreen('cartScreen')">🛒</button>
+      <button onclick="showScreen('reviewsScreen')">💬</button>
+    </div>
+
+    <div id="notification" class="notification"></div>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'940285912ac63448',t:'MTc0NzMxMDkxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
   </body>
 </html>
