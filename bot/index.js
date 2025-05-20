@@ -24,7 +24,7 @@ async function notifySubscribers(product) {
 }
 
 bot.start((ctx) => {
-  ctx.reply("Добро пожаловать в магазин мерча! 😎", {
+  ctx.reply("Добро пожаловать в Shroud! 😎", {
     reply_markup: {
       inline_keyboard: [
         [
@@ -87,7 +87,7 @@ bot.action("create_form", (ctx) => {
 });
 
 bot.action("visit_channel", (ctx) => {
-  ctx.reply("Подписывайтесь на наш канал: https://t.me/your_channel");
+  ctx.reply("Подписывайтесь на наш канал: https://t.me/shroudshirt");
 });
 
 bot.action(/approve_review_(.+)/, async (ctx) => {
@@ -252,7 +252,7 @@ bot.on("text", async (ctx) => {
     }
     userStates[userId].state = "waiting_for_form_text";
     ctx.reply(
-      "Введите название, размер, состояние и категорию товара (например: Футболка, M, Новое, Одежда):",
+      "Введите название, размер, состояние и категорию товара (например: Metallica, M, 3/5, Футболка):",
       {
         reply_markup: { force_reply: true },
       }
