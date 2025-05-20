@@ -87,7 +87,7 @@ bot.action("create_form", (ctx) => {
 });
 
 bot.action("visit_channel", (ctx) => {
-  ctx.reply("Подписывайтесь на наш канал: https://t.me/shroudshirt");
+  ctx.reply("Присоединяйтесь к нашему каналу: @Shroudshirt");
 });
 
 bot.action(/approve_review_(.+)/, async (ctx) => {
